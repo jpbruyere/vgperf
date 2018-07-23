@@ -1,0 +1,3 @@
+[submodule "external/vkh"]
+	path = external/vkh
+	url = http://gitlab.com/jpbruyere/vkhelpers.git

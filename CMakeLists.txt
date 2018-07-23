@@ -1,0 +1,60 @@
+CMAKE_MINIMUM_REQUIRED(VERSION 3.9)
+
+PROJECT(vgperf VERSION 0.1.0 DESCRIPTION "Vector Graphic Libraries performance tests")
+
+SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+SET(CMAKE_CXX_FLAGS "-W -Wall")
+SET(CMAKE_EXE_LINKER_FLAGS "-lm")
+
+IF(NOT CMAKE_BUILD_TYPE)
+  SET(CMAKE_BUILD_TYPE Debug)
+ENDIF()
+MESSAGE(STATUS "${CMAKE_BUILD_TYPE} build.")
+
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+	ADD_DEFINITIONS (-DDEBUG)
+ENDIF()
+
+OPTION(TESTS_VKVG "build vkvg" ON)
+OPTION(TESTS_CAIRO "build cairo tests" ON)
+
+SET(CAIRO_INCLUDE_DIRECTORY "/usr/include/cairo" CACHE STRING "CAIRO include directory")
+SET(CAIRO_LIBRARY "/usr/lib/x86_64-linux-gnu/libcairo.so" CACHE STRING "CAIRO include directory")
+
+
+SET(VKVG_INCLUDE_DIRECTORY "/usr/local/include/vkvg" CACHE STRING "VKVG include directory")
+SET(VKVG_LIBRARY "/usr/local/lib/libvkvg.so" CACHE STRING "VKVG include directory")
+
+
+set(VULKAN_SDK "$ENV{VULKAN_SDK}" CACHE STRING "LunarG Vulkan SDK path")
+if (VULKAN_SDK)
+		set(ENV{VULKAN_SDK} ${VULKAN_SDK})
+		SET(ENV{VK_LAYER_PATH} "${VULKAN_SDK}/etc/explicit_layer.d")
+endif ()
+
+MESSAGE(STATUS "VULKAN_SDK = $ENV{VULKAN_SDK}")
+MESSAGE(STATUS "VK_LAYER_PATH = $ENV{VK_LAYER_PATH}")
+
+add_subdirectory (external/vkh)
+
+#be aware that system libraries have priority on SDK in the finding.
+FIND_PACKAGE(Vulkan REQUIRED)
+FIND_PACKAGE(GLFW3 REQUIRED)
+
+FILE(GLOB SOURCES src/*.c)
+
+ADD_EXECUTABLE(${PROJECT_NAME} ${SOURCES})
+TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE
+	${CAIRO_INCLUDE_DIRECTORY}
+	${Vulkan_INCLUDE_DIRS}
+	${VKVG_INCLUDE_DIRECTORY}
+	${CMAKE_CURRENT_SOURCE_DIR}/src
+	${CMAKE_CURRENT_SOURCE_DIR}/external/vkh/src
+)
+TARGET_LINK_LIBRARIES(${PROJECT_NAME}
+	${Vulkan_LIBRARIES}
+	${GLFW3_LIBRARY}
+	vkh_static
+	${VKVG_LIBRARY}
+)
+
