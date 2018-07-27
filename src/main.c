@@ -6,6 +6,8 @@
 
 char const * tests_names [] = {
     "Line stroke",
+    "rect",
+    "rectangles",
     "Circle drawing"
 };
 

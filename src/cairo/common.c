@@ -2,6 +2,8 @@
 #include "common.h"
 
 #include "line.h"
+#include "rect.h"
+#include "rectangles.h"
 
 void ca_randomize_color (cairo_t *ctx) {
     cairo_set_source_rgba(ctx,
@@ -42,4 +44,13 @@ void init_cairo_tests (test_context_t* ctx) {
     ctx->tests [TID_lines].init = ca_line_init;
     ctx->tests [TID_lines].perform = ca_line_perform;
     ctx->tests [TID_lines].cleanup = ca_line_cleanup;
+
+
+    ctx->tests [TID_rects].init = ca_rect_init;
+    ctx->tests [TID_rects].perform = ca_rect_perform;
+    ctx->tests [TID_rects].cleanup = ca_rect_cleanup;
+
+    ctx->tests [TID_rectangles].init = ca_rectangles_init;
+    ctx->tests [TID_rectangles].perform = ca_rectangles_perform;
+    ctx->tests [TID_rectangles].cleanup = ca_rectangles_cleanup;
 }

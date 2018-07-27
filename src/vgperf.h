@@ -5,7 +5,7 @@
 #include <float.h>
 #include "rnd.h"
 
-#define TESTS_COUNT 1
+#define TESTS_COUNT 3
 
 enum DrawMode {
     DM_FILL = 0x1,
@@ -15,6 +15,8 @@ enum DrawMode {
 
 enum TestID {
     TID_lines,
+    TID_rects,
+    TID_rectangles,
     TID_circles,
 };
 

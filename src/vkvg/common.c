@@ -4,6 +4,8 @@
 #include "vkh_presenter.h"
 
 #include "line.h"
+#include "rect.h"
+#include "rectangles.h"
 
 void randomize_color (VkvgContext ctx) {
     vkvg_set_source_rgba(ctx,
@@ -53,4 +55,13 @@ void init_vkvg_tests (test_context_t* ctx) {
     ctx->tests [TID_lines].init = line_init;
     ctx->tests [TID_lines].perform = line_perform;
     ctx->tests [TID_lines].cleanup = line_cleanup;
+
+    ctx->tests [TID_rects].init = rect_init;
+    ctx->tests [TID_rects].perform = rect_perform;
+    ctx->tests [TID_rects].cleanup = rect_cleanup;
+
+    ctx->tests [TID_rectangles].init = rectangles_init;
+    ctx->tests [TID_rectangles].perform = rectangles_perform;
+    ctx->tests [TID_rectangles].cleanup = rectangles_cleanup;
+
 }
