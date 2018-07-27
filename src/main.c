@@ -1,39 +1,22 @@
-#ifndef PERFTEST_H
-#define PERFTEST_H
+#include "vgperf.h"
 
-#include "vkvg.h"
-#include <stdlib.h>
-#include <float.h>
+#if WITH_VKVG
+#include "vkvg/vgperf.h"
+#endif
 
-enum DrawMode {
-    DM_FILL = 0x1,
-    DM_STROKE = 0x2,
-    DM_BOTH = 0x3
+char const * tests_names [] = {
+    "Line stroke",
+    "Circle drawing"
 };
 
-typedef struct _results {
-    double run_min;
-    double run_max;
-    double avg_time;
-    double median_time;
-    double std_deriv;
-} results_t;
 
-results_t initResults () {
-    results_t res = {};
-    res.run_min = DBL_MAX;
-    res.run_max = DBL_MIN;
-    return res;
+void initResults (results_t* res) {
+    res->avg_time = 0;
+    res->median_time = 0;
+    res->std_deriv = 0;
+    res->run_min = DBL_MAX;
+    res->run_max = DBL_MIN;
 }
-
-typedef struct _options {
-    char*       test_name;
-    int         iterations;
-    int         count;
-    int         width;
-    int         height;
-    enum DrawMode    drawMode;
-} options_t;
 
 options_t initOptions (int argc, char *argv[]) {
     options_t opt = {};
@@ -75,7 +58,6 @@ options_t initOptions (int argc, char *argv[]) {
     return opt;
 }
 
-
 void printHelp () {
     printf ("\t-w x : Set test surface width.\n");
     printf ("\t-h x : Set test surface height.\n");
@@ -86,22 +68,25 @@ void printHelp () {
     printf ("\t-b :   Set shape draw mode to fill and stroke.\n");
 }
 void outputResultsHeadRow (options_t* opt) {
-    printf ("__________________________________________________________________________________________________________\n");
-    printf ("| Test Name       | Iter | Cpt  | Resolution  |DM |   Min    |   Max    |  Average |  Median  | Std Deriv|\n");
-    printf ("|-----------------|------|------|-------------|---|----------|----------|----------|----------|----------|\n");
+    printf ("Iterations: %4d\n", opt->iterations);
+    printf ("Count:      %4d\n", opt->count);
+    printf ("Resolution: %d x %d\n", opt->width, opt->height);
+
+    printf ("__________________________________________________________________________________________\n");
+    printf ("| Library  |  Test Name      | DM |   Min    |   Max    |  Average |  Median  | Std Deriv|\n");
+    printf ("|----------|-----------------|----|----------|----------|----------|----------|----------|\n");
 }
-void outputResultsOnOneLine (options_t* opt, results_t* res) {
-    printf ("| %.15s | %4d | %4d | %4d x %4d | ",
-            opt->test_name, opt->iterations, opt->count, opt->width, opt->height);
+void outputResultsOnOneLine (const char* libName, const char* testName, options_t* opt, results_t* res) {
+    printf ("| %-8s | %-15s | ",libName, testName);
     switch (opt->drawMode) {
     case DM_BOTH:
-        printf ("B | ");
+        printf ("B  | ");
         break;
     case DM_FILL:
-        printf ("F | ");
+        printf ("F  | ");
         break;
     case DM_STROKE:
-        printf ("S | ");
+        printf ("S  | ");
         break;
     }
     printf ("%.6f | %.6f | %.6f | %.6f | %.6f |\n",
@@ -141,6 +126,7 @@ double get_tick (void)
     gettimeofday (&now, NULL);
     return (double)now.tv_sec + (double)now.tv_usec / 1000000.0;
 }
+
 double median_run_time (double data[], int n)
 {
     double temp;
@@ -160,6 +146,7 @@ double median_run_time (double data[], int n)
     else
         return data[n/2];
 }
+
 double standard_deviation (const double data[], int n, double mean)
 {
     double sum_deviation = 0.0;
@@ -169,4 +156,93 @@ double standard_deviation (const double data[], int n, double mean)
     return sqrt (sum_deviation / n);
 }
 
-#endif // PERFTEST_H
+void test_library (options_t* opt, test_context_t* ctx) {
+    ctx->libCtx = ctx->init (opt);
+
+    for (uint t=0; t<TESTS_COUNT; t++){
+
+        /* Reinitialize random seed to a known state */
+        srnd();
+
+        results_t* res = &ctx->tests[t].results;
+
+        initResults (res);
+
+        double run_time_values[opt->iterations];
+        double start_time, stop_time, run_time, run_total = 0;
+
+        ctx->tests[t].init (opt, ctx->libCtx);
+
+        for (int i=0; i<opt->iterations; i++) {
+
+            start_time = get_tick();
+
+            ctx->tests[t].perform (opt, ctx->libCtx);
+
+            stop_time = get_tick();
+
+            run_time = stop_time - start_time;
+            run_time_values[i] = run_time;
+
+            if (run_time < res->run_min)
+                res->run_min = run_time;
+            if (run_time > res->run_max)
+                res->run_max = run_time;
+            run_total += run_time;
+        }
+
+        ctx->tests[t].cleanup (opt, ctx->libCtx);
+
+        res->avg_time = run_total / (double)opt->iterations;
+        res->median_time = median_run_time(run_time_values, opt->iterations);
+        res->std_deriv = standard_deviation(run_time_values,opt->iterations, res->avg_time);
+    }
+
+    ctx->cleanup (ctx->libCtx);
+}
+
+int main(int argc, char *argv[]) {
+    options_t opt = initOptions(argc, argv);
+
+    test_context_t* libs = (test_context_t*)malloc(0);
+    int libCpt = 0;
+
+#if WITH_VKVG
+    libs = (test_context_t*)realloc (libs, (libCpt+1)*sizeof(test_context_t));
+    init_vkvg_tests (&libs[libCpt]);
+    test_library(&opt, &libs[libCpt]);
+    libCpt++;
+#endif
+
+#if WITH_CAIRO
+    libs = (test_context_t*)realloc (libs, (libCpt+1)*sizeof(test_context_t));
+    init_cairo_tests (&libs[libCpt]);
+    test_library(&opt, &libs[libCpt]);
+    libCpt++;
+#endif
+
+    outputResultsHeadRow(&opt);
+    for (uint t=0; t<TESTS_COUNT; t++){
+        for (uint l=0; l<libCpt; l++) {
+            outputResultsOnOneLine(libs[l].libName, tests_names[t], &opt, &libs[l].tests[t].results);
+        }
+    }
+
+
+
+
+    /*opt.test_name = "vkvg rectangles and";
+
+
+    results_t res = performTest (&opt);
+
+    //outputResults(&opt, &res);
+
+    */
+
+
+
+    free (libs);
+
+    return 0;
+}

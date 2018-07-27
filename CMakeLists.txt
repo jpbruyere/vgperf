@@ -11,39 +11,50 @@ IF(NOT CMAKE_BUILD_TYPE)
 ENDIF()
 MESSAGE(STATUS "${CMAKE_BUILD_TYPE} build.")
 
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+IF (CMAKE_BUILD_TYPE STREQUAL "Debug")
 	ADD_DEFINITIONS (-DDEBUG)
 ENDIF()
 
 OPTION(TESTS_VKVG "build vkvg" ON)
 OPTION(TESTS_CAIRO "build cairo tests" ON)
 
-SET(CAIRO_INCLUDE_DIRECTORY "/usr/include/cairo" CACHE STRING "CAIRO include directory")
-SET(CAIRO_LIBRARY "/usr/lib/x86_64-linux-gnu/libcairo.so" CACHE STRING "CAIRO include directory")
-
-
-SET(VKVG_INCLUDE_DIRECTORY "/usr/local/include/vkvg" CACHE STRING "VKVG include directory")
-SET(VKVG_LIBRARY "/usr/local/lib/libvkvg.so" CACHE STRING "VKVG include directory")
-
-
-set(VULKAN_SDK "$ENV{VULKAN_SDK}" CACHE STRING "LunarG Vulkan SDK path")
-if (VULKAN_SDK)
-		set(ENV{VULKAN_SDK} ${VULKAN_SDK})
-		SET(ENV{VK_LAYER_PATH} "${VULKAN_SDK}/etc/explicit_layer.d")
-endif ()
-
-MESSAGE(STATUS "VULKAN_SDK = $ENV{VULKAN_SDK}")
-MESSAGE(STATUS "VK_LAYER_PATH = $ENV{VK_LAYER_PATH}")
-
-add_subdirectory (external/vkh)
-
-#be aware that system libraries have priority on SDK in the finding.
-FIND_PACKAGE(Vulkan REQUIRED)
-FIND_PACKAGE(GLFW3 REQUIRED)
-
 FILE(GLOB SOURCES src/*.c)
 
+IF (TESTS_VKVG)
+	set(VULKAN_SDK "$ENV{VULKAN_SDK}" CACHE STRING "LunarG Vulkan SDK path")
+	if (VULKAN_SDK)
+			set(ENV{VULKAN_SDK} ${VULKAN_SDK})
+			SET(ENV{VK_LAYER_PATH} "${VULKAN_SDK}/etc/explicit_layer.d")
+	endif ()
+
+	MESSAGE(STATUS "VULKAN_SDK = $ENV{VULKAN_SDK}")
+	MESSAGE(STATUS "VK_LAYER_PATH = $ENV{VK_LAYER_PATH}")
+
+	add_subdirectory (external/vkh)
+
+	#be aware that system libraries have priority on SDK in the finding.
+	FIND_PACKAGE(Vulkan REQUIRED)
+
+	SET(VKVG_INCLUDE_DIRECTORY "/usr/local/include/vkvg" CACHE STRING "VKVG include directory")
+	SET(VKVG_LIBRARY "/usr/local/lib/libvkvg.so" CACHE STRING "VKVG include directory")
+	FILE (GLOB VKVG_SOURCES src/vkvg/*.c)
+	LIST (APPEND SOURCES ${VKVG_SOURCES})
+	ADD_DEFINITIONS (-DWITH_VKVG)
+ENDIF ()
+
+if (TESTS_CAIRO)
+	SET(CAIRO_INCLUDE_DIRECTORY "/usr/include/cairo" CACHE STRING "CAIRO include directory")
+	SET(CAIRO_LIBRARY "/usr/lib/x86_64-linux-gnu/libcairo.so" CACHE STRING "CAIRO include directory")
+	FILE (GLOB CAIRO_SOURCES src/cairo/*.c)
+	LIST (APPEND SOURCES ${CAIRO_SOURCES})
+	ADD_DEFINITIONS (-DWITH_CAIRO)
+endif()
+
+
+FIND_PACKAGE(GLFW3 REQUIRED)
+
 ADD_EXECUTABLE(${PROJECT_NAME} ${SOURCES})
+
 TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE
 	${CAIRO_INCLUDE_DIRECTORY}
 	${Vulkan_INCLUDE_DIRS}
@@ -56,5 +67,6 @@ TARGET_LINK_LIBRARIES(${PROJECT_NAME}
 	${GLFW3_LIBRARY}
 	vkh_static
 	${VKVG_LIBRARY}
+	${CAIRO_LIBRARY}
 )
 
