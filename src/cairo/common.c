@@ -1,9 +1,7 @@
 ﻿
 #include "common.h"
 
-#include "line.h"
-#include "rect.h"
-#include "rectangles.h"
+#include "basic_tests.h"
 
 void ca_randomize_color (cairo_t *ctx) {
     cairo_set_source_rgba(ctx,
@@ -12,6 +10,22 @@ void ca_randomize_color (cairo_t *ctx) {
         (double)rnd()/RAND_MAX,
         (double)rnd()/RAND_MAX
     );
+}
+
+void ca_draw (draw_mode_t drawMode, cairo_t *ctx) {
+    switch (drawMode) {
+    case DM_BOTH:
+        cairo_fill_preserve(ctx);
+        ca_randomize_color (ctx);
+        cairo_stroke(ctx);
+        break;
+    case DM_FILL:
+        cairo_fill(ctx);
+        break;
+    case DM_STROKE:
+        cairo_stroke(ctx);
+        break;
+    }
 }
 
 /**
@@ -35,22 +49,53 @@ void ca_cleanupLibrary (library_context_t* ctx) {
 
     free(ctx);
 }
+void ca_saveImg (library_context_t* ctx, const char* fileName) {
+    cairo_surface_write_to_png (ctx->surf, fileName);
+}
+
+void ca_initTest(options_t* opt, library_context_t* ctx) {
+    ctx->ctx = cairo_create(ctx->surf);
+    switch (opt->antialias) {
+    case ANTIALIAS_NONE:
+        cairo_set_antialias (ctx->ctx, CAIRO_ANTIALIAS_NONE);
+        break;
+    case ANTIALIAS_DEFAULT:
+        cairo_set_antialias (ctx->ctx, CAIRO_ANTIALIAS_DEFAULT);
+        break;
+    case ANTIALIAS_FAST:
+        cairo_set_antialias (ctx->ctx, CAIRO_ANTIALIAS_FAST);
+        break;
+    case ANTIALIAS_GOOD:
+        cairo_set_antialias (ctx->ctx, CAIRO_ANTIALIAS_GOOD);
+        break;
+    case ANTIALIAS_BEST:
+        cairo_set_antialias (ctx->ctx, CAIRO_ANTIALIAS_BEST);
+        break;
+    }
+    cairo_set_operator(ctx->ctx, CAIRO_OPERATOR_CLEAR);
+    //cairo_set_source_rgba(ctx->ctx,0,0,0,0);
+    cairo_paint(ctx->ctx);
+    cairo_set_operator(ctx->ctx, CAIRO_OPERATOR_OVER);
+
+    cairo_set_line_width (ctx->ctx, opt->lineWidth);
+}
+void ca_cleanupTest (options_t* opt, library_context_t* ctx) {
+    cairo_destroy(ctx->ctx);
+}
+
 
 void init_cairo_tests (test_context_t* ctx) {
     ctx->libName = "cairo";
     ctx->init = ca_initLibrary;
     ctx->cleanup = ca_cleanupLibrary;
+    ctx->initTest = ca_initTest;
+    ctx->cleanupTest = ca_cleanupTest;
+    ctx->saveImg = ca_saveImg;
+    ctx->testCount = 0;
+    ctx->tests = (test_t*)malloc(0);
 
-    ctx->tests [TID_lines].init = ca_line_init;
-    ctx->tests [TID_lines].perform = ca_line_perform;
-    ctx->tests [TID_lines].cleanup = ca_line_cleanup;
-
-
-    ctx->tests [TID_rects].init = ca_rect_init;
-    ctx->tests [TID_rects].perform = ca_rect_perform;
-    ctx->tests [TID_rects].cleanup = ca_rect_cleanup;
-
-    ctx->tests [TID_rectangles].init = ca_rectangles_init;
-    ctx->tests [TID_rectangles].perform = ca_rectangles_perform;
-    ctx->tests [TID_rectangles].cleanup = ca_rectangles_cleanup;
+    addTest(ctx, "lines stroke", NULL, ca_line_perform, NULL);
+    addTest(ctx, "test", NULL, ca_rect_perform, NULL);
+    addTest(ctx, "rectangles", NULL, ca_rectangles_perform, NULL);
+    addTest(ctx, "circles", NULL, ca_circles_perform, NULL);
 }

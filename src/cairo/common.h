@@ -5,9 +5,10 @@
 #include "cairo.h"
 
 typedef struct _library_context {
-	cairo_surface_t* surf;
-	cairo_t* ctx;
+    cairo_surface_t* surf;
+    cairo_t* ctx;
 } library_context_t;
 
 void ca_randomize_color (cairo_t* ctx);
+void ca_draw (draw_mode_t drawMode, cairo_t* ctx);
 #endif

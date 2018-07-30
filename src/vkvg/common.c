@@ -3,9 +3,7 @@
 #include "vkh_device.h"
 #include "vkh_presenter.h"
 
-#include "line.h"
-#include "rect.h"
-#include "rectangles.h"
+#include "basic_tests.h"
 
 void randomize_color (VkvgContext ctx) {
     vkvg_set_source_rgba(ctx,
@@ -14,6 +12,31 @@ void randomize_color (VkvgContext ctx) {
         (float)rnd()/RAND_MAX,
         (float)rnd()/RAND_MAX
     );
+}
+
+void vkvg_draw (draw_mode_t drawMode, VkvgContext ctx) {
+    switch (drawMode) {
+    case DM_BOTH:
+        vkvg_fill_preserve(ctx);
+        randomize_color(ctx);
+        vkvg_stroke(ctx);
+        break;
+    case DM_FILL:
+        vkvg_fill(ctx);
+        break;
+    case DM_STROKE:
+        vkvg_stroke(ctx);
+        break;
+    }
+}
+
+void present_surface (library_context_t* ctx) {
+    glfwPollEvents();
+    VkhPresenter r = ctx->vkEngine->renderer;
+    if (!vkh_presenter_draw (r))
+        vkh_presenter_build_blit_cmd (r, vkvg_surface_get_vk_image(ctx->surf));
+
+    vkDeviceWaitIdle(r->dev->dev);
 }
 
 /**
@@ -31,6 +54,9 @@ library_context_t* initLibrary(options_t* opt) {
 
     ctx->surf = vkvg_surface_create (ctx->dev, opt->width, opt->height);
 
+    if (opt->present == 1)
+        vkh_presenter_build_blit_cmd (r, vkvg_surface_get_vk_image(ctx->surf));
+
     return ctx;
 }
 /**
@@ -46,22 +72,48 @@ void cleanupLibrary (library_context_t* ctx) {
 
     free(ctx);
 }
+/**
+ * @brief clear surface and create vkvg context, run before each test occurence
+ * @param options
+ * @param library context
+ */
+void initTest(options_t* opt, library_context_t* ctx) {
+    vkvg_surface_clear(ctx->surf);
+    ctx->ctx = vkvg_create(ctx->surf);
 
+    //cairo_set_antialias (ctx->ctx, CAIRO_ANTIALIAS_NONE);
+    vkvg_set_line_width (ctx->ctx, opt->lineWidth);
+}
+/**
+ * @brief cleanup Test, present surface on screen if requested. run after each test occurence.
+ * @param options
+ * @param library context
+ */
+void cleanupTest (options_t* opt, library_context_t* ctx) {
+    vkvg_destroy(ctx->ctx);
+
+    if (opt->present == 1)
+        present_surface(ctx);
+}
+void saveImg (library_context_t* ctx, const char* fileName) {
+    vkvg_surface_write_to_png(ctx->surf, fileName);
+}
+/**
+ * @brief set library func pointers and register available tests.
+ * @param ctx
+ */
 void init_vkvg_tests (test_context_t* ctx) {
     ctx->libName = "vkvg";
     ctx->init = initLibrary;
     ctx->cleanup = cleanupLibrary;
+    ctx->initTest = initTest;
+    ctx->cleanupTest = cleanupTest;
+    ctx->saveImg = saveImg;
+    ctx->testCount = 0;
+    ctx->tests = (test_t*)malloc(0);
 
-    ctx->tests [TID_lines].init = line_init;
-    ctx->tests [TID_lines].perform = line_perform;
-    ctx->tests [TID_lines].cleanup = line_cleanup;
-
-    ctx->tests [TID_rects].init = rect_init;
-    ctx->tests [TID_rects].perform = rect_perform;
-    ctx->tests [TID_rects].cleanup = rect_cleanup;
-
-    ctx->tests [TID_rectangles].init = rectangles_init;
-    ctx->tests [TID_rectangles].perform = rectangles_perform;
-    ctx->tests [TID_rectangles].cleanup = rectangles_cleanup;
-
+    addTest(ctx, "lines stroke", NULL, line_perform, NULL);
+    addTest(ctx, "test", NULL, rect_perform, NULL);
+    addTest(ctx, "rectangles", NULL, rectangles_perform, NULL);
+    addTest(ctx, "circles", NULL, circles_perform, NULL);
 }
