@@ -88,14 +88,13 @@ void init_cairo_tests (test_context_t* ctx) {
     ctx->libName = "cairo";
     ctx->init = ca_initLibrary;
     ctx->cleanup = ca_cleanupLibrary;
-    ctx->initTest = ca_initTest;
-    ctx->cleanupTest = ca_cleanupTest;
     ctx->saveImg = ca_saveImg;
     ctx->testCount = 0;
     ctx->tests = (test_t*)malloc(0);
 
-    addTest(ctx, "lines stroke", NULL, ca_line_perform, NULL);
-    addTest(ctx, "test", NULL, ca_rect_perform, NULL);
-    addTest(ctx, "rectangles", NULL, ca_rectangles_perform, NULL);
-    addTest(ctx, "circles", NULL, ca_circles_perform, NULL);
+    addTest(ctx, "lines stroke", ca_initTest, ca_line_perform, ca_cleanupTest);
+    addTest(ctx, "test", ca_initTest, ca_rect_perform, ca_cleanupTest);
+    addTest(ctx, "rectangles", ca_initTest, ca_rectangles_perform, ca_cleanupTest);
+    addTest(ctx, "circles", ca_initTest, ca_circles_perform, ca_cleanupTest);
+    addTest(ctx, "stars", ca_initTest, ca_stars_perform, ca_cleanupTest);
 }

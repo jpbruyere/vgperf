@@ -75,5 +75,25 @@ void ca_circles_perform (options_t *opt, library_context_t* ctx) {
         cairo_arc(ctx->ctx, xc, yc, r, 0, M_PI * 2.0);
         ca_draw(opt->drawMode,ctx->ctx);
     }
+}
+
+void ca_stars_perform (options_t *opt, library_context_t* ctx) {
+    int w = opt->width;
+    int h = opt->height;
+
+    for (int i=0; i<opt->count; i++) {
+        double x = (double)rnd()/RAND_MAX * w;
+        double y = (double)rnd()/RAND_MAX * h;
+
+        cairo_move_to (ctx->ctx, x+star_points[0][0], y+star_points[0][1]);
+
+        for (int s=1; s<11; s++)
+            cairo_line_to (ctx->ctx, x+star_points[s][0], y+star_points[s][1]);
+
+        cairo_close_path (ctx->ctx);
+
+        ca_randomize_color (ctx->ctx);
+        ca_draw(opt->drawMode,ctx->ctx);
+    }
 
 }

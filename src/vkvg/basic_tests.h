@@ -73,5 +73,25 @@ void circles_perform (options_t *opt, library_context_t* ctx) {
         vkvg_arc(ctx->ctx, xc, yc, r, 0, M_PI * 2.0);
         vkvg_draw(opt->drawMode,ctx->ctx);
     }
+}
+
+void stars_perform (options_t *opt, library_context_t* ctx) {
+    int w = opt->width;
+    int h = opt->height;
+
+    for (int i=0; i<opt->count; i++) {
+        float x = (float)rnd()/RAND_MAX * w;
+        float y = (float)rnd()/RAND_MAX * h;
+
+        vkvg_move_to (ctx->ctx, x+star_points[0][0], y+star_points[0][1]);
+
+        for (int s=1; s<11; s++)
+            vkvg_line_to (ctx->ctx, x+star_points[s][0], y+star_points[s][1]);
+
+        vkvg_close_path (ctx->ctx);
+
+        randomize_color (ctx->ctx);
+        vkvg_draw(opt->drawMode,ctx->ctx);
+    }
 
 }

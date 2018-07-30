@@ -4,6 +4,20 @@
 #include "vkvg/vgperf.h"
 #endif
 
+int star_points[11][2] = {
+    { 0, 85 },
+    { 75, 75 },
+    { 100, 10 },
+    { 125, 75 },
+    { 200, 85 },
+    { 150, 125 },
+    { 160, 190 },
+    { 100, 150 },
+    { 40, 190 },
+    { 50, 125 },
+    { 0, 85 }
+};
+
 void initResults (results_t* res) {
     res->avg_time = 0;
     res->median_time = 0;
@@ -210,7 +224,6 @@ void test_library (options_t* opt, test_context_t* ctx) {
         double start_time, stop_time, run_time, run_total = 0;
 
         for (int i=0; i<opt->iterations; i++) {
-            ctx->initTest (opt, ctx->libCtx);
 
             if (test->init)
                 test->init (opt, ctx->libCtx);
@@ -230,7 +243,8 @@ void test_library (options_t* opt, test_context_t* ctx) {
                 res->run_max = run_time;
             run_total += run_time;
 
-            ctx->cleanupTest (opt, ctx->libCtx);
+            if (test->cleanup)
+                test->cleanup (opt, ctx->libCtx);
         }
         if (opt->saveImgs == 1) {
             char fileName[256] = "";

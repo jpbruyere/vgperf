@@ -18,7 +18,7 @@
 # define MAX(a,b) (((a) > (b)) ? (a) : (b))
 #endif
 
-#define TESTS_COUNT 4
+#define TESTS_COUNT 5
 
 typedef enum _draw_mode_t {
     DM_FILL = 0x1,
@@ -48,11 +48,15 @@ typedef struct _options_t {
     int width;
     int height;
     int lineWidth;
+    int capStyle;
+    int joinStyle;
     int present;
     int saveImgs;
     draw_mode_t drawMode;
     antialias_t antialias;
 } options_t;
+
+extern int star_points[11][2];
 
 /**
  * @brief Pointer to dedicated struct for each library for storing device ctx, etc..
@@ -98,10 +102,7 @@ typedef struct _test_context
     LibCtx libCtx;//library context
     PFNinitLibrary init;//library init and surface creation
     PFNcleanupLibrary cleanup;//library cleanup
-    PFNtest initTest; //common init for all tests, run once before each test,
-    PFNtest cleanupTest; //common cleanup for tests
     PFNSaveImg saveImg;
-
     test_t* tests;//test array
     int testCount;
 }test_context_t;

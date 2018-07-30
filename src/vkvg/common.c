@@ -106,14 +106,13 @@ void init_vkvg_tests (test_context_t* ctx) {
     ctx->libName = "vkvg";
     ctx->init = initLibrary;
     ctx->cleanup = cleanupLibrary;
-    ctx->initTest = initTest;
-    ctx->cleanupTest = cleanupTest;
     ctx->saveImg = saveImg;
     ctx->testCount = 0;
     ctx->tests = (test_t*)malloc(0);
 
-    addTest(ctx, "lines stroke", NULL, line_perform, NULL);
-    addTest(ctx, "test", NULL, rect_perform, NULL);
-    addTest(ctx, "rectangles", NULL, rectangles_perform, NULL);
-    addTest(ctx, "circles", NULL, circles_perform, NULL);
+    addTest(ctx, "lines stroke", initTest, line_perform, cleanupTest);
+    addTest(ctx, "test", initTest, rect_perform, cleanupTest);
+    addTest(ctx, "rectangles", initTest, rectangles_perform, cleanupTest);
+    addTest(ctx, "circles", initTest, circles_perform, cleanupTest);
+    addTest(ctx, "stars", initTest, stars_perform, cleanupTest);
 }
