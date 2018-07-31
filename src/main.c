@@ -4,6 +4,10 @@
 #include "vkvg/vgperf.h"
 #endif
 
+#if WITH_CAIRO
+#include "cairo/vgperf.h"
+#endif
+
 int star_points[11][2] = {
     { 0, 85 },
     { 75, 75 },
@@ -26,19 +30,37 @@ void initResults (results_t* res) {
     res->run_max = DBL_MIN;
 }
 
+void printHelp () {
+    printf ("\t-w x : Set test surface width. (int)\n");
+    printf ("\t-h x : Set test surface height. (int)\n");
+    printf ("\t-i x : Set iterations count. (int)(deffault=100)\n");
+    printf ("\t-n x : Set shape occurence count. (int)(default=100)\n");
+    printf ("\t-l x : Set line width (int). (default=1)\n");
+    printf ("\t-a [n|d|f|g|b] : Set antialias (n=none,d=default,f=fast,g=good,b=best).\n");
+    printf ("\t-d [f|s|b] : Set draw mode. (f=fill,s=stroke,b=both fill and stroke(default)).\n");
+    printf ("\t-c [b|r|s] : Set line caps. (b=butt(default),r=round,s=square).\n");
+    printf ("\t-j [m|b|r] : Set line joins. (m=mitter(default),b=bevel,r=round).\n");
+    printf ("\t-f [c|l|r|s] : Set fill type. (c=solid color(default),l=linear gradient,r=radial gradient,s=surface).\n");
+    printf ("\t-p :   Display drawings on screen.\n");
+    printf ("\t-s :   Save produced images on disk.\n");
+}
+
 options_t initOptions (int argc, char *argv[]) {
     options_t opt = {};
     opt.iterations = 100;
-    opt.count = 1000;
+    opt.count = 100;
     opt.width = 1024;
     opt.height = 800;
     opt.present = 0;
     opt.lineWidth = 1;
     opt.drawMode = DM_BOTH;
     opt.antialias = ANTIALIAS_DEFAULT;
+    opt.capStyle = LINE_CAP_BUTT;
+    opt.joinStyle = LINE_JOIN_MITER;
+    opt.fillType = FILL_TYPE_SOLID;
     opt.saveImgs = 0;
 
-    char antialias, drawMode;
+    char antialias, drawMode, lineCaps, lineJoins, fillType;
     for (int i = 1; i < argc; i++) {
         if (argv[i][0] == '-') {
             switch (argv[i][1]) {
@@ -51,7 +73,7 @@ options_t initOptions (int argc, char *argv[]) {
             case 'i':
                 sscanf (argv[++i], "%d", &opt.iterations);
                 break;
-            case 'c':
+            case 'n':
                 sscanf (argv[++i], "%d", &opt.count);
                 break;
             case 'l':
@@ -88,6 +110,53 @@ options_t initOptions (int argc, char *argv[]) {
                     break;
                 }
                 break;
+            case 'c':
+                sscanf (argv[++i], "%c", &lineCaps);
+                switch (lineCaps) {
+                case 'b':
+                    opt.capStyle = LINE_CAP_BUTT;
+                    break;
+                case 'r':
+                    opt.capStyle = LINE_CAP_ROUND;
+                    break;
+                case 's':
+                    opt.capStyle = LINE_CAP_SQUARE;
+                    break;
+                }
+                break;
+            case 'j':
+                sscanf (argv[++i], "%c", &lineJoins);
+                switch (lineJoins) {
+                case 'm':
+                    opt.joinStyle = LINE_JOIN_MITER;
+                    break;
+                case 'b':
+                    opt.joinStyle = LINE_JOIN_BEVEL;
+                    break;
+                case 'r':
+                    opt.joinStyle = LINE_JOIN_ROUND;
+                    break;
+                }
+                break;
+            case 'f':
+                sscanf (argv[++i], "%c", &fillType);
+                switch (fillType) {
+                case 'c':
+                    opt.fillType = FILL_TYPE_SOLID;
+                    break;
+                case 'l':
+                    opt.fillType = FILL_TYPE_LINEAR;
+                    break;
+                case 'r':
+                    opt.fillType = FILL_TYPE_RADIAL;
+                    printf ("Radial gradient option is not implemented.\n");
+                    exit(0);
+                    break;
+                case 's':
+                    opt.fillType = FILL_TYPE_SURFACE;
+                    break;
+                }
+                break;
             case 'p':
                 opt.present = 1;
                 break;
@@ -106,49 +175,80 @@ options_t initOptions (int argc, char *argv[]) {
     return opt;
 }
 
-void printHelp () {
-    printf ("\t-w x : Set test surface width. (int)\n");
-    printf ("\t-h x : Set test surface height. (int)\n");
-    printf ("\t-i x : Set iterations count. (int)\n");
-    printf ("\t-c x : Set shape occurence count. (int)\n");
-    printf ("\t-l x : Set line width (int).\n");
-    printf ("\t-a [n|d|f|g|b] : Set antialias (n=none,d=default,f=fast,g=good,b=best).\n");
-    printf ("\t-d [f|s|b] : Set draw mode. (f=fill,s=stroke,b=both fill and stroke).\n");
-    printf ("\t-p :   Display drawings on screen.\n");
-    printf ("\t-s :   Save produced images on disk.\n");
-}
 void outputResultsHeadRow (options_t* opt) {
-    printf ("Iterations: %4d\n", opt->iterations);
-    printf ("Count:      %4d\n", opt->count);
-    printf ("Line width: %4d\n", opt->lineWidth);
-    printf ("Resolution: %d x %d\n", opt->width, opt->height);
-
-    switch (opt->antialias) {
-    case ANTIALIAS_NONE:
-        printf ("Antialias   = None\n");
+    printf ("Iterations  = %4d\n", opt->iterations);
+    printf ("Count       = %4d\n", opt->count);
+    printf ("Line width  = %4d\n", opt->lineWidth);
+    printf ("Line caps   = ");
+    switch (opt->capStyle) {
+    case LINE_CAP_BUTT:
+        printf ("BUTT\n");
         break;
-    case ANTIALIAS_DEFAULT:
-        printf ("Antialias   = Default\n");
+    case LINE_CAP_ROUND:
+        printf ("ROUND\n");
         break;
-    case ANTIALIAS_FAST:
-        printf ("Antialias   = Fast\n");
-        break;
-    case ANTIALIAS_GOOD:
-        printf ("Antialias   = Good\n");
-        break;
-    case ANTIALIAS_BEST:
-        printf ("Antialias   = Best\n");
+    case LINE_CAP_SQUARE:
+        printf ("SQUARE\n");
         break;
     }
+    printf ("Line joins  = ");
+    switch (opt->joinStyle) {
+    case LINE_JOIN_MITER:
+        printf ("MITTER\n");
+        break;
+    case LINE_JOIN_BEVEL:
+        printf ("BEVEL\n");
+        break;
+    case LINE_JOIN_ROUND:
+        printf ("ROUND\n");
+        break;
+    }
+    printf ("Fill mode   = ");
+    switch (opt->fillType) {
+    case FILL_TYPE_SOLID:
+        printf ("Solid color\n");
+        break;
+    case FILL_TYPE_LINEAR:
+        printf ("Linear gradient\n");
+        break;
+    case FILL_TYPE_RADIAL:
+        printf ("Radial gradient\n");
+        break;
+    case FILL_TYPE_SURFACE:
+        printf ("Surface\n");
+        break;
+    }
+
+    printf ("Resolution  = %d x %d\n", opt->width, opt->height);
+
+    printf ("Antialias   = ");
+    switch (opt->antialias) {
+    case ANTIALIAS_NONE:
+        printf ("None\n");
+        break;
+    case ANTIALIAS_DEFAULT:
+        printf ("Default\n");
+        break;
+    case ANTIALIAS_FAST:
+        printf ("Fast\n");
+        break;
+    case ANTIALIAS_GOOD:
+        printf ("Good\n");
+        break;
+    case ANTIALIAS_BEST:
+        printf ("Best\n");
+        break;
+    }
+    printf ("Draw Mode   = ");
     switch (opt->drawMode) {
     case DM_BOTH:
-        printf ("Draw Mode   = FILL and STROKE\n");
+        printf ("FILL and STROKE\n");
         break;
     case DM_FILL:
-        printf ("Draw Mode   = FILL\n");
+        printf ("FILL\n");
         break;
     case DM_STROKE:
-        printf ("Draw Mode   = STROKE\n");
+        printf ("STROKE\n");
         break;
     }
 
@@ -198,17 +298,34 @@ double standard_deviation (const double data[], int n, double mean)
     return sqrt (sum_deviation / n);
 }
 
-void addTest (test_context_t* ctx, const char* testName, PFNtest pfnInit, PFNtest pfnPerform, PFNtest pfncleanup) {
+void addTest (vgperf_context_t* ctx, const char* testName, void* pfnInit, void* pfnPerform, void* pfncleanup) {
     ctx->tests = (test_t*)realloc(ctx->tests, (ctx->testCount + 1)*sizeof(test_t));
     test_t* test = &ctx->tests[ctx->testCount];
     ctx->testCount++;
     test->test_name = testName;
-    test->init = pfnInit;
-    test->perform = pfnPerform;
-    test->cleanup = pfncleanup;
+    test->init = (PFNtest)pfnInit;
+    test->perform = (PFNtest)pfnPerform;
+    test->cleanup = (PFNtest)pfncleanup;
+}
+/**
+ * @brief save resulting surface to disk
+ * @param library context
+ * @param current test
+ */
+void saveResultingImg (vgperf_context_t* ctx, test_t* test) {
+    char fileName[256] = "";
+    strcpy (fileName, ctx->libName);
+    strcat (fileName, "_");
+    strcat (fileName, test->test_name);
+    strcat (fileName, ".png");
+    for (int i=0; i<strlen(fileName); i++){
+        if (fileName[i] == ' ')
+            fileName[i] = '_';
+    }
+    ctx->saveImg (ctx->libCtx, fileName);
 }
 
-void test_library (options_t* opt, test_context_t* ctx) {
+void test_library (options_t* opt, vgperf_context_t* ctx) {
     ctx->libCtx = ctx->init (opt);
 
     /* Reinitialize random seed to a known state */
@@ -246,18 +363,9 @@ void test_library (options_t* opt, test_context_t* ctx) {
             if (test->cleanup)
                 test->cleanup (opt, ctx->libCtx);
         }
-        if (opt->saveImgs == 1) {
-            char fileName[256] = "";
-            strcpy (fileName, ctx->libName);
-            strcat (fileName, "_");
-            strcat (fileName, test->test_name);
-            strcat (fileName, ".png");
-            for (int i=0; i<strlen(fileName); i++){
-                if (fileName[i] == ' ')
-                    fileName[i] = '_';
-            }
-            ctx->saveImg (ctx->libCtx, fileName);
-        }
+
+        if (opt->saveImgs == 1)
+            saveResultingImg (ctx, test);
 
         res->avg_time = run_total / (double)opt->iterations;
         res->median_time = median_run_time(run_time_values, opt->iterations);
@@ -270,18 +378,18 @@ void test_library (options_t* opt, test_context_t* ctx) {
 int main(int argc, char *argv[]) {
     options_t opt = initOptions(argc, argv);
 
-    test_context_t* libs = (test_context_t*)malloc(0);
+    vgperf_context_t* libs = (vgperf_context_t*)malloc(0);
     int libCpt = 0;
 
 #if WITH_VKVG
-    libs = (test_context_t*)realloc (libs, (libCpt+1)*sizeof(test_context_t));
+    libs = (vgperf_context_t*)realloc (libs, (libCpt+1)*sizeof(vgperf_context_t));
     init_vkvg_tests (&libs[libCpt]);
     test_library(&opt, &libs[libCpt]);
     libCpt++;
 #endif
 
 #if WITH_CAIRO
-    libs = (test_context_t*)realloc (libs, (libCpt+1)*sizeof(test_context_t));
+    libs = (vgperf_context_t*)realloc (libs, (libCpt+1)*sizeof(vgperf_context_t));
     init_cairo_tests (&libs[libCpt]);
     test_library(&opt, &libs[libCpt]);
     libCpt++;
@@ -293,20 +401,6 @@ int main(int argc, char *argv[]) {
             outputResultsOnOneLine(libs[l].libName, libs[l].tests[t].test_name, &opt, &libs[l].tests[t].results);
         }
     }
-
-
-
-
-    /*opt.test_name = "vkvg rectangles and";
-
-
-    results_t res = performTest (&opt);
-
-    //outputResults(&opt, &res);
-
-    */
-
-
 
     free (libs);
 

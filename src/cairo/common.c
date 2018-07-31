@@ -52,7 +52,11 @@ void ca_cleanupLibrary (library_context_t* ctx) {
 void ca_saveImg (library_context_t* ctx, const char* fileName) {
     cairo_surface_write_to_png (ctx->surf, fileName);
 }
-
+/**
+ * @brief common test init func for simple tests, context creation and settings
+ * @param global options
+ * @param cairo library context
+ */
 void ca_initTest(options_t* opt, library_context_t* ctx) {
     ctx->ctx = cairo_create(ctx->surf);
     switch (opt->antialias) {
@@ -72,8 +76,31 @@ void ca_initTest(options_t* opt, library_context_t* ctx) {
         cairo_set_antialias (ctx->ctx, CAIRO_ANTIALIAS_BEST);
         break;
     }
+    switch (opt->capStyle) {
+    case LINE_CAP_BUTT:
+        cairo_set_line_cap(ctx->ctx, CAIRO_LINE_CAP_BUTT);
+        break;
+    case LINE_CAP_ROUND:
+        cairo_set_line_cap(ctx->ctx, CAIRO_LINE_CAP_ROUND);
+        break;
+    case LINE_CAP_SQUARE:
+        cairo_set_line_cap(ctx->ctx, CAIRO_LINE_CAP_SQUARE);
+        break;
+    }
+    switch (opt->joinStyle) {
+    case LINE_JOIN_MITER:
+        cairo_set_line_join(ctx->ctx, CAIRO_LINE_JOIN_MITER);
+        break;
+    case LINE_JOIN_BEVEL:
+        cairo_set_line_join(ctx->ctx, CAIRO_LINE_JOIN_BEVEL);
+        break;
+    case LINE_JOIN_ROUND:
+        cairo_set_line_join(ctx->ctx, CAIRO_LINE_JOIN_ROUND);
+        break;
+    }
+
+    //clear surface
     cairo_set_operator(ctx->ctx, CAIRO_OPERATOR_CLEAR);
-    //cairo_set_source_rgba(ctx->ctx,0,0,0,0);
     cairo_paint(ctx->ctx);
     cairo_set_operator(ctx->ctx, CAIRO_OPERATOR_OVER);
 
@@ -84,17 +111,17 @@ void ca_cleanupTest (options_t* opt, library_context_t* ctx) {
 }
 
 
-void init_cairo_tests (test_context_t* ctx) {
+void init_cairo_tests (vgperf_context_t* ctx) {
     ctx->libName = "cairo";
-    ctx->init = ca_initLibrary;
-    ctx->cleanup = ca_cleanupLibrary;
-    ctx->saveImg = ca_saveImg;
+    ctx->init = (PFNinitLibrary) ca_initLibrary;
+    ctx->cleanup = (PFNcleanupLibrary) ca_cleanupLibrary;
+    ctx->saveImg = (PFNSaveImg) ca_saveImg;
     ctx->testCount = 0;
     ctx->tests = (test_t*)malloc(0);
 
     addTest(ctx, "lines stroke", ca_initTest, ca_line_perform, ca_cleanupTest);
-    addTest(ctx, "test", ca_initTest, ca_rect_perform, ca_cleanupTest);
     addTest(ctx, "rectangles", ca_initTest, ca_rectangles_perform, ca_cleanupTest);
     addTest(ctx, "circles", ca_initTest, ca_circles_perform, ca_cleanupTest);
     addTest(ctx, "stars", ca_initTest, ca_stars_perform, ca_cleanupTest);
+    //addTest(ctx, "single poly", ca_initTest, ca_single_poly_perform, ca_cleanupTest);
 }

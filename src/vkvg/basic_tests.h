@@ -23,23 +23,24 @@ void line_perform (options_t *opt, library_context_t* ctx)
     }
 }
 
-void rect_perform (options_t *opt, library_context_t* ctx)
+void single_poly_perform (options_t *opt, library_context_t* ctx)
 {
     int w = opt->width;
     int h = opt->height;
 
+    float x = (float)rnd()/RAND_MAX * w;
+    float y = (float)rnd()/RAND_MAX * h;
+
+    randomize_color (ctx->ctx);
+    vkvg_move_to(ctx->ctx, x, y);
+
     for (int i=0; i<opt->count; i++) {
-        float x1 = (float)rnd()/RAND_MAX * w;
-        float x2 = (float)rnd()/RAND_MAX * w;
-        float y1 = (float)rnd()/RAND_MAX * h;
-        float y2 = (float)rnd()/RAND_MAX * h;
+        x = (float)rnd()/RAND_MAX * w;
+        y = (float)rnd()/RAND_MAX * h;
 
-
-        randomize_color (ctx->ctx);
-        vkvg_move_to(ctx->ctx, x1, y1);
-        vkvg_line_to(ctx->ctx, x2, y2);
-        vkvg_stroke(ctx->ctx);
+        vkvg_line_to(ctx->ctx, x, y);
     }
+    vkvg_draw(opt->drawMode, ctx->ctx);
 }
 
 void rectangles_perform (options_t *opt, library_context_t* ctx)
@@ -66,7 +67,7 @@ void circles_perform (options_t *opt, library_context_t* ctx) {
     for (int i=0; i<opt->count; i++) {
         double xc = (double)rnd()/RAND_MAX * w;
         double yc = (double)rnd()/RAND_MAX * h;
-        double r = (double)rnd()/RAND_MAX * MIN(w,h) / 2.0;
+        double r = (double)rnd()/RAND_MAX * MIN(w,h) / 4.0;
 
         randomize_color (ctx->ctx);
 
@@ -82,11 +83,12 @@ void stars_perform (options_t *opt, library_context_t* ctx) {
     for (int i=0; i<opt->count; i++) {
         float x = (float)rnd()/RAND_MAX * w;
         float y = (float)rnd()/RAND_MAX * h;
+        float scale = (float)rnd()/RAND_MAX *0.5 + 0.15;
 
-        vkvg_move_to (ctx->ctx, x+star_points[0][0], y+star_points[0][1]);
+        vkvg_move_to (ctx->ctx, x+star_points[0][0]*scale, y+star_points[0][1]*scale);
 
         for (int s=1; s<11; s++)
-            vkvg_line_to (ctx->ctx, x+star_points[s][0], y+star_points[s][1]);
+            vkvg_line_to (ctx->ctx, x+star_points[s][0]*scale, y+star_points[s][1]*scale);
 
         vkvg_close_path (ctx->ctx);
 

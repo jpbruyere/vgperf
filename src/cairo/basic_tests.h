@@ -23,23 +23,24 @@ void ca_line_perform (options_t *opt, library_context_t* ctx)
     }
 }
 
-void ca_rect_perform (options_t *opt, library_context_t* ctx)
+void ca_single_poly_perform (options_t *opt, library_context_t* ctx)
 {
     int w = opt->width;
     int h = opt->height;
 
+    double x = (double)rnd()/RAND_MAX * w;
+    double y = (double)rnd()/RAND_MAX * h;
+
+    ca_randomize_color (ctx->ctx);
+    cairo_move_to(ctx->ctx, x, y);
+
     for (int i=0; i<opt->count; i++) {
-        double x1 = (double)rnd()/RAND_MAX * w;
-        double x2 = (double)rnd()/RAND_MAX * w;
-        double y1 = (double)rnd()/RAND_MAX * h;
-        double y2 = (double)rnd()/RAND_MAX * h;
+        x = (double)rnd()/RAND_MAX * w;
+        y = (double)rnd()/RAND_MAX * h;
 
-
-        ca_randomize_color (ctx->ctx);
-        cairo_move_to(ctx->ctx, x1, y1);
-        cairo_line_to(ctx->ctx, x2, y2);
-        cairo_fill(ctx->ctx);
+        cairo_line_to(ctx->ctx, x, y);
     }
+    ca_draw(opt->drawMode, ctx->ctx);
 }
 
 void ca_rectangles_perform (options_t *opt, library_context_t* ctx)

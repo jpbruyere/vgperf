@@ -2,8 +2,11 @@
 #define VGPERF_H
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <float.h>
 #include <math.h>
+#include <string.h>
+#include <sys/time.h>
 #include "rnd.h"
 
 #ifndef M_PI
@@ -18,7 +21,7 @@
 # define MAX(a,b) (((a) > (b)) ? (a) : (b))
 #endif
 
-#define TESTS_COUNT 5
+#define TESTS_COUNT 4
 
 typedef enum _draw_mode_t {
     DM_FILL = 0x1,
@@ -34,6 +37,25 @@ typedef enum _antialias {
     ANTIALIAS_BEST
 } antialias_t;
 
+typedef enum _fill_type_t {
+    FILL_TYPE_SOLID,
+    FILL_TYPE_SURFACE,
+    FILL_TYPE_LINEAR,
+    FILL_TYPE_RADIAL,
+} fill_type_t;
+
+typedef enum _line_cap_t {
+    LINE_CAP_BUTT,
+    LINE_CAP_ROUND,
+    LINE_CAP_SQUARE
+} line_cap_t;
+
+typedef enum _vkvg_line_join_t {
+    LINE_JOIN_MITER,
+    LINE_JOIN_ROUND,
+    LINE_JOIN_BEVEL
+} line_join_t;
+
 typedef struct _results_t {
     double run_min;
     double run_max;
@@ -48,8 +70,9 @@ typedef struct _options_t {
     int width;
     int height;
     int lineWidth;
-    int capStyle;
-    int joinStyle;
+    line_cap_t capStyle;
+    line_join_t joinStyle;
+    fill_type_t fillType;
     int present;
     int saveImgs;
     draw_mode_t drawMode;
@@ -94,19 +117,19 @@ typedef struct _test {
 }test_t;
 
 /**
- * @brief store context and function pointers for each libraries
+ * @brief store context and function pointers for each libraries.
  */
-typedef struct _test_context
+typedef struct _vgperf_context
 {
     char* libName;
-    LibCtx libCtx;//library context
+    LibCtx libCtx;//library context pointer, different for each libs with dedicated objs like device, etc.
     PFNinitLibrary init;//library init and surface creation
     PFNcleanupLibrary cleanup;//library cleanup
     PFNSaveImg saveImg;
     test_t* tests;//test array
     int testCount;
-}test_context_t;
+}vgperf_context_t;
 
-void addTest (test_context_t *ctx, const char *testName, PFNtest pfnInit, PFNtest pfnPerform, PFNtest pfncleanup);
+void addTest (vgperf_context_t *ctx, const char *testName, void *pfnInit, void *pfnPerform, void *pfncleanup);
 
 #endif // VGPERF_H

@@ -73,8 +73,8 @@ void cleanupLibrary (library_context_t* ctx) {
     free(ctx);
 }
 /**
- * @brief clear surface and create vkvg context, run before each test occurence
- * @param options
+ * @brief clear surface and create and setup vkvg context, run before each test occurence
+ * @param global options
  * @param library context
  */
 void initTest(options_t* opt, library_context_t* ctx) {
@@ -83,10 +83,34 @@ void initTest(options_t* opt, library_context_t* ctx) {
 
     //cairo_set_antialias (ctx->ctx, CAIRO_ANTIALIAS_NONE);
     vkvg_set_line_width (ctx->ctx, opt->lineWidth);
+
+    switch (opt->capStyle) {
+    case LINE_CAP_BUTT:
+        vkvg_set_line_cap(ctx->ctx, VKVG_LINE_CAP_BUTT);
+        break;
+    case LINE_CAP_ROUND:
+        vkvg_set_line_cap(ctx->ctx, VKVG_LINE_CAP_ROUND);
+        break;
+    case LINE_CAP_SQUARE:
+        vkvg_set_line_cap(ctx->ctx, VKVG_LINE_CAP_SQUARE);
+        break;
+    }
+    switch (opt->joinStyle) {
+    case LINE_JOIN_MITER:
+        vkvg_set_line_join(ctx->ctx, VKVG_LINE_JOIN_MITER);
+        break;
+    case LINE_JOIN_BEVEL:
+        vkvg_set_line_join(ctx->ctx, VKVG_LINE_JOIN_BEVEL);
+        break;
+    case LINE_JOIN_ROUND:
+        vkvg_set_line_join(ctx->ctx, VKVG_LINE_JOIN_ROUND);
+        break;
+    }
+
 }
 /**
  * @brief cleanup Test, present surface on screen if requested. run after each test occurence.
- * @param options
+ * @param global options
  * @param library context
  */
 void cleanupTest (options_t* opt, library_context_t* ctx) {
@@ -102,17 +126,17 @@ void saveImg (library_context_t* ctx, const char* fileName) {
  * @brief set library func pointers and register available tests.
  * @param ctx
  */
-void init_vkvg_tests (test_context_t* ctx) {
-    ctx->libName = "vkvg";
-    ctx->init = initLibrary;
-    ctx->cleanup = cleanupLibrary;
-    ctx->saveImg = saveImg;
-    ctx->testCount = 0;
-    ctx->tests = (test_t*)malloc(0);
+void init_vkvg_tests (vgperf_context_t* ctx) {
+    ctx->libName    = "vkvg";
+    ctx->init       = (PFNinitLibrary) initLibrary;
+    ctx->cleanup    = (PFNcleanupLibrary) cleanupLibrary;
+    ctx->saveImg    = (PFNSaveImg) saveImg;
+    ctx->testCount  = 0;
+    ctx->tests      = (test_t*)malloc(0);
 
-    addTest(ctx, "lines stroke", initTest, line_perform, cleanupTest);
-    addTest(ctx, "test", initTest, rect_perform, cleanupTest);
-    addTest(ctx, "rectangles", initTest, rectangles_perform, cleanupTest);
-    addTest(ctx, "circles", initTest, circles_perform, cleanupTest);
-    addTest(ctx, "stars", initTest, stars_perform, cleanupTest);
+    addTest (ctx, "lines stroke", initTest, line_perform, cleanupTest);
+    addTest (ctx, "rectangles", initTest, rectangles_perform, cleanupTest);
+    addTest (ctx, "circles", initTest, circles_perform, cleanupTest);
+    addTest (ctx, "stars", initTest, stars_perform, cleanupTest);
+    //addTest(ctx, "single poly", initTest, single_poly_perform, cleanupTest);
 }
