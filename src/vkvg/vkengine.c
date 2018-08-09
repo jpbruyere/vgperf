@@ -31,7 +31,10 @@
 bool vkeCheckPhyPropBlitSource (VkEngine e) {
     VkFormatProperties formatProps;
     vkGetPhysicalDeviceFormatProperties(e->dev->phy, e->renderer->format, &formatProps);
-    assert((formatProps.linearTilingFeatures & VK_FORMAT_FEATURE_BLIT_SRC_BIT) && "Format cannot be used as transfer source");
+    assert((formatProps.optimalTilingFeatures & VK_FORMAT_FEATURE_BLIT_SRC_BIT) && "Format cannot be used as blit source");
+    assert((formatProps.optimalTilingFeatures & VK_IMAGE_USAGE_TRANSFER_SRC_BIT) && "Format cannot be used as transfer source");
+    assert((formatProps.optimalTilingFeatures & VK_IMAGE_USAGE_TRANSFER_DST_BIT) && "Format cannot be used as transfer dest");
+    //VK_IMAGE_USAGE_SAMPLED_BIT|VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT|VK_IMAGE_USAGE_TRANSFER_SRC_BIT|VK_IMAGE_USAGE_TRANSFER_DST_BIT
 }
 
 VkSampleCountFlagBits getMaxUsableSampleCount(VkSampleCountFlags counts)
@@ -86,7 +89,7 @@ vk_engine_t* vkengine_create (VkPhysicalDeviceType preferedGPU, uint32_t width, 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE,  GLFW_TRUE);
     glfwWindowHint(GLFW_FLOATING,   GLFW_FALSE);
-    glfwWindowHint(GLFW_DECORATED,  GLFW_FALSE);
+    glfwWindowHint(GLFW_DECORATED,  GLFW_TRUE);
 
     e->window = glfwCreateWindow (width, height, "Window Title", NULL, NULL);
     VkSurfaceKHR surf;
@@ -146,13 +149,13 @@ vk_engine_t* vkengine_create (VkPhysicalDeviceType preferedGPU, uint32_t width, 
     }
 
     char const * dex [] = {"VK_KHR_swapchain"};
-/*#if DEBUG
+#if VKVG_USE_VALIDATION
     uint32_t dlayCpt = 1;
     static char const * dlay [] = {"VK_LAYER_LUNARG_standard_validation"};
-#else*/
+#else
     uint32_t dlayCpt = 0;
     static char const * dlay [] = {};
-//#endif
+#endif
     VkPhysicalDeviceFeatures enabledFeatures = {
         .fillModeNonSolid = true,
     };
@@ -172,7 +175,7 @@ vk_engine_t* vkengine_create (VkPhysicalDeviceType preferedGPU, uint32_t width, 
     e->dev = vkh_device_create(pi->phy, dev);
 
     e->renderer = vkh_presenter_create
-            (e->dev, pi->pQueue, surf, width, height, VK_FORMAT_B8G8R8A8_UNORM, VK_PRESENT_MODE_FIFO_KHR);
+            (e->dev, pi->pQueue, surf, width, height, VK_FORMAT_B8G8R8A8_UNORM, VK_PRESENT_MODE_MAILBOX_KHR);
 
 
     vkh_app_free_phyinfos (phyCount, phys);

@@ -4,6 +4,7 @@
 #include "vkh_presenter.h"
 
 #include "basic_tests.h"
+#include "test1.h"
 
 void randomize_color (VkvgContext ctx) {
     vkvg_set_source_rgba(ctx,
@@ -12,6 +13,65 @@ void randomize_color (VkvgContext ctx) {
         (float)rnd()/RAND_MAX,
         (float)rnd()/RAND_MAX
     );
+}
+
+void vkvg_draw_shape (shape_t shape, options_t *opt, library_context_t* ctx) {
+    int w = opt->width;
+    int h = opt->height;
+
+    float x, y, z, v;
+
+    randomize_color (ctx->ctx);
+
+    switch (shape) {
+    case SHAPE_LINE:
+        x = (float)rnd()/RAND_MAX * w;
+        y = (float)rnd()/RAND_MAX * h;
+        z = (float)rnd()/RAND_MAX * w;
+        v = (float)rnd()/RAND_MAX * h;
+
+        vkvg_move_to(ctx->ctx, x, y);
+        vkvg_line_to(ctx->ctx, z, v);
+        vkvg_stroke(ctx->ctx);
+        break;
+    case SHAPE_RECTANGLE:
+        x = trunc( (0.5*(float)opt->width*rnd())/RAND_MAX );
+        y = trunc( (0.5*(float)opt->height*rnd())/RAND_MAX );
+        z = trunc( (0.5*(float)opt->width*rnd())/RAND_MAX ) + 1;
+        v = trunc( (0.5*(float)opt->height*rnd())/RAND_MAX ) + 1;
+
+        vkvg_rectangle(ctx->ctx, x+1, y+1, z, v);
+
+        vkvg_draw(opt->drawMode, ctx->ctx);
+        break;
+    case SHAPE_ROUNDED_RECTANGLE:
+        break;
+    case SHAPE_CIRCLE:
+        x = (float)rnd()/RAND_MAX * w;
+        y = (float)rnd()/RAND_MAX * h;
+        v = (float)rnd()/RAND_MAX * MIN(w,h) / 2.0;
+
+        vkvg_arc(ctx->ctx, x, y, v, 0, M_PI * 2.0);
+
+        vkvg_draw(opt->drawMode,ctx->ctx);
+        break;
+    case SHAPE_TRIANGLE:
+        break;
+    case SHAPE_STAR:
+        x = (float)rnd()/RAND_MAX * w;
+        y = (float)rnd()/RAND_MAX * h;
+        z = (float)rnd()/RAND_MAX *0.5 + 0.15; //scale
+
+        vkvg_move_to (ctx->ctx, x+star_points[0][0]*z, y+star_points[0][1]*z);
+        for (int s=1; s<11; s++)
+            vkvg_line_to (ctx->ctx, x+star_points[s][0]*z, y+star_points[s][1]*z);
+        vkvg_close_path (ctx->ctx);
+
+        vkvg_draw(opt->drawMode,ctx->ctx);
+        break;
+    case SHAPE_RANDOM:
+        break;
+    }
 }
 
 void vkvg_draw (draw_mode_t drawMode, VkvgContext ctx) {
@@ -30,12 +90,12 @@ void vkvg_draw (draw_mode_t drawMode, VkvgContext ctx) {
     }
 }
 
-void present_surface (library_context_t* ctx) {
-    glfwPollEvents();
+void vkvg_present (options_t* opt, library_context_t* ctx) {
+    vkvg_flush (ctx->ctx);
     VkhPresenter r = ctx->vkEngine->renderer;
+    glfwPollEvents();
     if (!vkh_presenter_draw (r))
         vkh_presenter_build_blit_cmd (r, vkvg_surface_get_vk_image(ctx->surf));
-
     vkDeviceWaitIdle(r->dev->dev);
 }
 
@@ -115,9 +175,6 @@ void initTest(options_t* opt, library_context_t* ctx) {
  */
 void cleanupTest (options_t* opt, library_context_t* ctx) {
     vkvg_destroy(ctx->ctx);
-
-    if (opt->present == 1)
-        present_surface(ctx);
 }
 void saveImg (library_context_t* ctx, const char* fileName) {
     vkvg_surface_write_to_png(ctx->surf, fileName);
@@ -131,6 +188,8 @@ void init_vkvg_tests (vgperf_context_t* ctx) {
     ctx->init       = (PFNinitLibrary) initLibrary;
     ctx->cleanup    = (PFNcleanupLibrary) cleanupLibrary;
     ctx->saveImg    = (PFNSaveImg) saveImg;
+    ctx->present    = (PFNtest) vkvg_present;
+
     ctx->testCount  = 0;
     ctx->tests      = (test_t*)malloc(0);
 
@@ -138,5 +197,6 @@ void init_vkvg_tests (vgperf_context_t* ctx) {
     addTest (ctx, "rectangles", initTest, rectangles_perform, cleanupTest);
     addTest (ctx, "circles", initTest, circles_perform, cleanupTest);
     addTest (ctx, "stars", initTest, stars_perform, cleanupTest);
+    addTest (ctx, "test1", NULL, vkvg_test1_perform, NULL);
     //addTest(ctx, "single poly", initTest, single_poly_perform, cleanupTest);
 }

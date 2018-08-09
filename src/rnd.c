@@ -1041,6 +1041,7 @@ srnd(void)
 unsigned int
 rnd(void)
 {
+    return rand();
    unsigned short r1, r2;
 
    r1 = r[rp];

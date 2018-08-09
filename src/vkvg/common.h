@@ -14,6 +14,7 @@ typedef struct _library_context {
 } library_context_t;
 
 void randomize_color (VkvgContext ctx);
+void vkvg_draw_shape (shape_t shape, options_t *opt, library_context_t* ctx);
 void vkvg_draw (draw_mode_t drawMode, VkvgContext ctx);
-void present_surface (library_context_t* ctx);
+void vkvg_present (options_t* opt, library_context_t* ctx);
 #endif

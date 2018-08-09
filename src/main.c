@@ -31,11 +31,13 @@ void initResults (results_t* res) {
 }
 
 void printHelp () {
+    printf ("\t-t x : Run single test number x. (int)\n");
     printf ("\t-w x : Set test surface width. (int)\n");
     printf ("\t-h x : Set test surface height. (int)\n");
     printf ("\t-i x : Set iterations count. (int)(deffault=100)\n");
     printf ("\t-n x : Set shape occurence count. (int)(default=100)\n");
     printf ("\t-l x : Set line width (int). (default=1)\n");
+    printf ("\t-o [l|r|u|c|t|s|x] : Set shape (l=line(default),r=rectangle,u=rounded rectangle,c=circle,t=triangle,s=star,x=random).\n");
     printf ("\t-a [n|d|f|g|b] : Set antialias (n=none,d=default,f=fast,g=good,b=best).\n");
     printf ("\t-d [f|s|b] : Set draw mode. (f=fill,s=stroke,b=both fill and stroke(default)).\n");
     printf ("\t-c [b|r|s] : Set line caps. (b=butt(default),r=round,s=square).\n");
@@ -47,6 +49,7 @@ void printHelp () {
 
 options_t initOptions (int argc, char *argv[]) {
     options_t opt = {};
+    opt.runSingleTest = -1;//run all tests
     opt.iterations = 100;
     opt.count = 100;
     opt.width = 1024;
@@ -58,12 +61,16 @@ options_t initOptions (int argc, char *argv[]) {
     opt.capStyle = LINE_CAP_BUTT;
     opt.joinStyle = LINE_JOIN_MITER;
     opt.fillType = FILL_TYPE_SOLID;
+    opt.shape = SHAPE_LINE;
     opt.saveImgs = 0;
 
-    char antialias, drawMode, lineCaps, lineJoins, fillType;
+    char antialias, drawMode, lineCaps, lineJoins, fillType, shape;
     for (int i = 1; i < argc; i++) {
         if (argv[i][0] == '-') {
             switch (argv[i][1]) {
+            case 't':
+                sscanf (argv[++i], "%d", &opt.runSingleTest);
+                break;
             case 'w':
                 sscanf (argv[++i], "%d", &opt.width);
                 break;
@@ -107,6 +114,32 @@ options_t initOptions (int argc, char *argv[]) {
                     break;
                 case 'b':
                     opt.drawMode = DM_BOTH;
+                    break;
+                }
+                break;
+            case 'o':
+                sscanf (argv[++i], "%c", &shape);
+                switch (shape) {
+                case 'l':
+                    opt.shape = SHAPE_LINE;
+                    break;
+                case 'r':
+                    opt.shape = SHAPE_RECTANGLE;
+                    break;
+                case 'u':
+                    opt.shape = SHAPE_ROUNDED_RECTANGLE;
+                    break;
+                case 'c':
+                    opt.shape = SHAPE_CIRCLE;
+                    break;
+                case 's':
+                    opt.shape = SHAPE_STAR;
+                    break;
+                case 't':
+                    opt.shape = SHAPE_TRIANGLE;
+                    break;
+                case 'x':
+                    opt.shape = SHAPE_RANDOM;
                     break;
                 }
                 break;
@@ -179,6 +212,31 @@ void outputResultsHeadRow (options_t* opt) {
     printf ("Iterations  = %4d\n", opt->iterations);
     printf ("Count       = %4d\n", opt->count);
     printf ("Line width  = %4d\n", opt->lineWidth);
+    printf ("Shape       = ");
+    switch (opt->shape) {
+    case SHAPE_LINE:
+        printf ("Line\n");
+        break;
+    case SHAPE_RECTANGLE:
+        printf ("Rectangle\n");
+        break;
+    case SHAPE_ROUNDED_RECTANGLE:
+        printf ("Rounded Rectangle\n");
+        break;
+    case SHAPE_CIRCLE:
+        printf ("Circle\n");
+        break;
+    case SHAPE_TRIANGLE:
+        printf ("Triangle\n");
+        break;
+    case SHAPE_STAR:
+        printf ("Star\n");
+        break;
+    case SHAPE_RANDOM:
+        printf ("Random\n");
+        break;
+    }
+
     printf ("Line caps   = ");
     switch (opt->capStyle) {
     case LINE_CAP_BUTT:
@@ -252,12 +310,12 @@ void outputResultsHeadRow (options_t* opt) {
         break;
     }
 
-    printf ("_____________________________________________________________________________________\n");
-    printf ("| Library  |  Test Name      |   Min    |   Max    |  Average |  Median  | Std Deriv|\n");
-    printf ("|----------|-----------------|----------|----------|----------|----------|----------|\n");
+    printf ("____________________________________________________________________________________________\n");
+    printf ("| Test Name       |    Library      |   Min    |   Max    |  Average |  Median  | Std Deriv|\n");
+    printf ("|-----------------|-----------------|----------|----------|----------|----------|----------|\n");
 }
 void outputResultsOnOneLine (const char* libName, const char* testName, options_t* opt, results_t* res) {
-    printf ("| %-8s | %-15s | ",libName, testName);
+    printf ("| %-15s | %-15s | ",testName, libName);
     printf ("%.6f | %.6f | %.6f | %.6f | %.6f |\n",
             res->run_min, res->run_max, res->avg_time, res->median_time, res->std_deriv);
 }
@@ -325,52 +383,60 @@ void saveResultingImg (vgperf_context_t* ctx, test_t* test) {
     ctx->saveImg (ctx->libCtx, fileName);
 }
 
+void run_single_test (options_t* opt, vgperf_context_t* ctx, test_t* test) {
+
+    results_t* res = &test->results;
+    initResults (res);
+
+    double run_time_values[opt->iterations];
+    double start_time, stop_time, run_time, run_total = 0;
+
+    for (int i=0; i<opt->iterations; i++) {
+
+        if (test->init)
+            test->init (opt, ctx->libCtx);
+
+        start_time = get_tick();
+
+        test->perform (opt, ctx->libCtx);
+
+        if (opt->present == 1)
+            ctx->present (opt, ctx->libCtx);
+
+        stop_time = get_tick();
+
+        run_time = stop_time - start_time;
+        run_time_values[i] = run_time;
+
+        if (run_time < res->run_min)
+            res->run_min = run_time;
+        if (run_time > res->run_max)
+            res->run_max = run_time;
+        run_total += run_time;
+
+        if (test->cleanup)
+            test->cleanup (opt, ctx->libCtx);
+    }
+
+    if (opt->saveImgs == 1)
+        saveResultingImg (ctx, test);
+
+    res->avg_time = run_total / (double)opt->iterations;
+    res->median_time = median_run_time(run_time_values, opt->iterations);
+    res->std_deriv = standard_deviation(run_time_values,opt->iterations, res->avg_time);
+}
+
 void test_library (options_t* opt, vgperf_context_t* ctx) {
     ctx->libCtx = ctx->init (opt);
 
     /* Reinitialize random seed to a known state */
     srnd();
 
-    for (uint t=0; t<TESTS_COUNT; t++){
-        test_t* test = &ctx->tests[t];
-        results_t* res = &ctx->tests[t].results;
-
-        initResults (res);
-
-        double run_time_values[opt->iterations];
-        double start_time, stop_time, run_time, run_total = 0;
-
-        for (int i=0; i<opt->iterations; i++) {
-
-            if (test->init)
-                test->init (opt, ctx->libCtx);
-
-            start_time = get_tick();
-
-            test->perform (opt, ctx->libCtx);
-
-            stop_time = get_tick();
-
-            run_time = stop_time - start_time;
-            run_time_values[i] = run_time;
-
-            if (run_time < res->run_min)
-                res->run_min = run_time;
-            if (run_time > res->run_max)
-                res->run_max = run_time;
-            run_total += run_time;
-
-            if (test->cleanup)
-                test->cleanup (opt, ctx->libCtx);
-        }
-
-        if (opt->saveImgs == 1)
-            saveResultingImg (ctx, test);
-
-        res->avg_time = run_total / (double)opt->iterations;
-        res->median_time = median_run_time(run_time_values, opt->iterations);
-        res->std_deriv = standard_deviation(run_time_values,opt->iterations, res->avg_time);
-    }
+    if (opt->runSingleTest < 0) {
+        for (uint t=0; t<ctx->testCount; t++)
+            run_single_test(opt,ctx,&ctx->tests[t]);
+    }else
+        run_single_test(opt,ctx,&ctx->tests[opt->runSingleTest]);
 
     ctx->cleanup (ctx->libCtx);
 }
@@ -401,6 +467,7 @@ int main(int argc, char *argv[]) {
             outputResultsOnOneLine(libs[l].libName, libs[l].tests[t].test_name, &opt, &libs[l].tests[t].results);
         }
     }
+    printf ("--------------------------------------------------------------------------------------------\n\n");
 
     free (libs);
 

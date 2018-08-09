@@ -21,7 +21,7 @@
 # define MAX(a,b) (((a) > (b)) ? (a) : (b))
 #endif
 
-#define TESTS_COUNT 4
+#define TESTS_COUNT 5
 
 typedef enum _draw_mode_t {
     DM_FILL = 0x1,
@@ -50,11 +50,21 @@ typedef enum _line_cap_t {
     LINE_CAP_SQUARE
 } line_cap_t;
 
-typedef enum _vkvg_line_join_t {
+typedef enum _line_join_t {
     LINE_JOIN_MITER,
     LINE_JOIN_ROUND,
     LINE_JOIN_BEVEL
 } line_join_t;
+
+typedef enum _shape_t {
+    SHAPE_LINE,
+    SHAPE_RECTANGLE,
+    SHAPE_ROUNDED_RECTANGLE,
+    SHAPE_CIRCLE,
+    SHAPE_TRIANGLE,
+    SHAPE_STAR,
+    SHAPE_RANDOM,
+} shape_t;
 
 typedef struct _results_t {
     double run_min;
@@ -65,6 +75,7 @@ typedef struct _results_t {
 } results_t;
 
 typedef struct _options_t {
+    int runSingleTest;
     int iterations;
     int count;
     int width;
@@ -73,6 +84,7 @@ typedef struct _options_t {
     line_cap_t capStyle;
     line_join_t joinStyle;
     fill_type_t fillType;
+    shape_t shape;
     int present;
     int saveImgs;
     draw_mode_t drawMode;
@@ -126,6 +138,7 @@ typedef struct _vgperf_context
     PFNinitLibrary init;//library init and surface creation
     PFNcleanupLibrary cleanup;//library cleanup
     PFNSaveImg saveImg;
+    PFNtest present;//present image on screen if requested
     test_t* tests;//test array
     int testCount;
 }vgperf_context_t;
