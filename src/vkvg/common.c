@@ -95,7 +95,7 @@ void vkvg_present (options_t* opt, library_context_t* ctx) {
     VkhPresenter r = ctx->vkEngine->renderer;
     glfwPollEvents();
     if (!vkh_presenter_draw (r))
-        vkh_presenter_build_blit_cmd (r, vkvg_surface_get_vk_image(ctx->surf));
+        vkh_presenter_build_blit_cmd (r, vkvg_surface_get_vk_image(ctx->surf), opt->width, opt->height);
     vkDeviceWaitIdle(r->dev->dev);
 }
 
@@ -115,7 +115,7 @@ library_context_t* initLibrary(options_t* opt) {
     ctx->surf = vkvg_surface_create (ctx->dev, opt->width, opt->height);
 
     if (opt->present == 1)
-        vkh_presenter_build_blit_cmd (r, vkvg_surface_get_vk_image(ctx->surf));
+        vkh_presenter_build_blit_cmd (r, vkvg_surface_get_vk_image(ctx->surf), opt->width, opt->height);
 
     return ctx;
 }

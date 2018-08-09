@@ -205,12 +205,12 @@ void vkengine_close (VkEngine e) {
 }
 void vkengine_blitter_run (VkEngine e, VkImage img) {
     VkhPresenter p = e->renderer;
-    vkh_presenter_build_blit_cmd (p, img);
+    vkh_presenter_build_blit_cmd (p, img, p->width, p->height);
 
     while (!vkengine_should_close (e)) {
         glfwPollEvents();
         if (!vkh_presenter_draw (p))
-            vkh_presenter_build_blit_cmd (p, img);
+            vkh_presenter_build_blit_cmd (p, img, p->width, p->height);
     }
 }
 inline bool vkengine_should_close (VkEngine e) {
