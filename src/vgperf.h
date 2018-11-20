@@ -21,7 +21,7 @@
 # define MAX(a,b) (((a) > (b)) ? (a) : (b))
 #endif
 
-#define TESTS_COUNT 5
+#define TESTS_COUNT 6
 
 typedef enum _draw_mode_t {
     DM_FILL = 0x1,

@@ -93,7 +93,7 @@ void vkvg_draw (draw_mode_t drawMode, VkvgContext ctx) {
 void vkvg_present (options_t* opt, library_context_t* ctx) {
     vkvg_flush (ctx->ctx);
     VkhPresenter r = ctx->vkEngine->renderer;
-    glfwPollEvents();
+    //glfwPollEvents();
     if (!vkh_presenter_draw (r))
         vkh_presenter_build_blit_cmd (r, vkvg_surface_get_vk_image(ctx->surf), opt->width, opt->height);
     vkDeviceWaitIdle(r->dev->dev);
@@ -110,7 +110,7 @@ library_context_t* initLibrary(options_t* opt) {
     ctx->vkEngine = vkengine_create (VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, opt->width, opt->height);
     VkhPresenter r = ctx->vkEngine->renderer;
 
-    ctx->dev = vkvg_device_create (r->dev->phy, r->dev->dev, r->qFam, 0);
+    ctx->dev = vkvg_device_create (vkh_app_get_inst(ctx->vkEngine->app), r->dev->phy, r->dev->dev, r->qFam, 0);
 
     ctx->surf = vkvg_surface_create (ctx->dev, opt->width, opt->height);
 
@@ -182,8 +182,13 @@ void saveImg (library_context_t* ctx, const char* fileName) {
 /**
  * @brief set library func pointers and register available tests.
  * @param ctx
+ * @return number of new vgperf context created
  */
-void init_vkvg_tests (vgperf_context_t* ctx) {
+int init_vkvg_tests (vgperf_context_t** libs) {
+    vgperf_context_t* ctx = (vgperf_context_t*)malloc(sizeof(vgperf_context_t));
+
+    libs[0] = ctx;
+
     ctx->libName    = "vkvg";
     ctx->init       = (PFNinitLibrary) initLibrary;
     ctx->cleanup    = (PFNcleanupLibrary) cleanupLibrary;
@@ -197,6 +202,8 @@ void init_vkvg_tests (vgperf_context_t* ctx) {
     addTest (ctx, "rectangles", initTest, rectangles_perform, cleanupTest);
     addTest (ctx, "circles", initTest, circles_perform, cleanupTest);
     addTest (ctx, "stars", initTest, stars_perform, cleanupTest);
-    addTest (ctx, "test1", NULL, vkvg_test1_perform, NULL);
+    //addTest (ctx, "test1", NULL, vkvg_test1_perform, NULL);
     //addTest(ctx, "single poly", initTest, single_poly_perform, cleanupTest);
+
+    return 1;
 }

@@ -4,7 +4,12 @@
 #include "../vgperf.h"
 #include "cairo.h"
 
-#if WITH_CAIRO_X11
+#if WITH_CAIRO_XCB
+#include <xcb/xcb.h>
+#include <cairo-xcb.h>
+#endif
+
+#if WITH_CAIRO_XLIB
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 #include <X11/Xutil.h>

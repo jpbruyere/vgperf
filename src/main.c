@@ -54,7 +54,7 @@ options_t initOptions (int argc, char *argv[]) {
     opt.count = 100;
     opt.width = 1024;
     opt.height = 800;
-    opt.present = 0;
+    opt.present = 1;
     opt.lineWidth = 1;
     opt.drawMode = DM_BOTH;
     opt.antialias = ANTIALIAS_DEFAULT;
@@ -400,7 +400,7 @@ void run_single_test (options_t* opt, vgperf_context_t* ctx, test_t* test) {
 
         test->perform (opt, ctx->libCtx);
 
-        if (opt->present == 1)
+        if (opt->present == 1 && ctx->present)
             ctx->present (opt, ctx->libCtx);
 
         stop_time = get_tick();
@@ -444,32 +444,33 @@ void test_library (options_t* opt, vgperf_context_t* ctx) {
 int main(int argc, char *argv[]) {
     options_t opt = initOptions(argc, argv);
 
-    vgperf_context_t* libs = (vgperf_context_t*)malloc(0);
+    vgperf_context_t* libs[10];
     int libCpt = 0;
 
 #if WITH_VKVG
-    libs = (vgperf_context_t*)realloc (libs, (libCpt+1)*sizeof(vgperf_context_t));
-    init_vkvg_tests (&libs[libCpt]);
-    test_library(&opt, &libs[libCpt]);
-    libCpt++;
+    libCpt += init_vkvg_tests (&libs[libCpt]);
 #endif
 
 #if WITH_CAIRO
-    libs = (vgperf_context_t*)realloc (libs, (libCpt+1)*sizeof(vgperf_context_t));
-    init_cairo_tests (&libs[libCpt]);
-    test_library(&opt, &libs[libCpt]);
-    libCpt++;
+    libCpt += init_cairo_tests (&libs[libCpt]);
 #endif
+
+    for (uint i=0; i<libCpt; i++)
+        test_library(&opt, libs[i]);
 
     outputResultsHeadRow(&opt);
     for (uint t=0; t<TESTS_COUNT; t++){
         for (uint l=0; l<libCpt; l++) {
-            outputResultsOnOneLine(libs[l].libName, libs[l].tests[t].test_name, &opt, &libs[l].tests[t].results);
+            if (t < libs[l]->testCount)
+                outputResultsOnOneLine(libs[l]->libName, libs[l]->tests[t].test_name, &opt, &libs[l]->tests[t].results);
         }
     }
     printf ("--------------------------------------------------------------------------------------------\n\n");
 
-    free (libs);
+    for (uint i=0; i<libCpt; i++){
+        free (libs[i]->tests);
+        free (libs[i]);
+    }
 
     return 0;
 }

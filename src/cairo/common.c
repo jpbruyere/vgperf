@@ -88,7 +88,69 @@ void ca_draw (draw_mode_t drawMode, cairo_t *ctx) {
     }
 }
 
-#if CAIRO_HAS_XLIB_SURFACE & WITH_CAIRO_X11
+#if CAIRO_HAS_XCB_SURFACE & WITH_CAIRO_XCB
+static xcb_visualtype_t *find_visual(xcb_connection_t *c, xcb_visualid_t visual)
+{
+    xcb_screen_iterator_t screen_iter = xcb_setup_roots_iterator(xcb_get_setup(c));
+
+    for (; screen_iter.rem; xcb_screen_next(&screen_iter)) {
+        xcb_depth_iterator_t depth_iter = xcb_screen_allowed_depths_iterator(screen_iter.data);
+        for (; depth_iter.rem; xcb_depth_next(&depth_iter)) {
+            xcb_visualtype_iterator_t visual_iter = xcb_depth_visuals_iterator(depth_iter.data);
+            for (; visual_iter.rem; xcb_visualtype_next(&visual_iter))
+                if (visual == visual_iter.data->visual_id)
+                    return visual_iter.data;
+        }
+    }
+
+    return NULL;
+}
+
+library_context_t* ca_xcb_initLibrary(options_t* opt) {
+    library_context_t* ctx = (library_context_t*)calloc(1, sizeof(library_context_t));
+
+    xcb_connection_t *c;
+    xcb_screen_t *screen;
+    xcb_window_t window;
+    uint32_t mask[2];
+    xcb_visualtype_t *visual;
+
+    c = xcb_connect(NULL, NULL);
+    mask[0] = 1;
+    mask[1] = XCB_EVENT_MASK_EXPOSURE;
+    screen = xcb_setup_roots_iterator(xcb_get_setup(c)).data;
+    window = xcb_generate_id(c);
+    xcb_create_window(c, XCB_COPY_FROM_PARENT, window, screen->root,
+            20, 20, opt->width, opt->height, 0,
+            XCB_WINDOW_CLASS_INPUT_OUTPUT,
+            screen->root_visual,
+            XCB_CW_OVERRIDE_REDIRECT | XCB_CW_EVENT_MASK,
+            mask);
+    xcb_map_window(c, window);
+
+    visual = find_visual(c, screen->root_visual);
+
+    ctx->surf = cairo_xcb_surface_create(c, window, visual, opt->width, opt->height);
+
+    return ctx;
+}
+void ca_xcb_cleanupLibrary (library_context_t* ctx) {
+    xcb_connection_t *c = cairo_xcb_device_get_connection(cairo_surface_get_device(ctx->surf));
+    cairo_surface_destroy (ctx->surf);
+    xcb_disconnect (c);
+    free(ctx);
+}
+void ca_xcb_cleanupTest (options_t* opt, library_context_t* ctx) {
+    cairo_destroy(ctx->ctx);
+    cairo_surface_flush (ctx->surf);
+}
+void ca_xcb_present (options_t* opt, library_context_t* ctx) {
+    xcb_flush (cairo_xcb_device_get_connection(cairo_surface_get_device(ctx->surf)));
+}
+
+#endif
+
+#if CAIRO_HAS_XLIB_SURFACE & WITH_CAIRO_XLIB
 library_context_t* ca_xlib_initLibrary(options_t* opt) {
     library_context_t* ctx = (library_context_t*)calloc(1, sizeof(library_context_t));
 
@@ -103,7 +165,7 @@ library_context_t* ca_xlib_initLibrary(options_t* opt) {
     XSelectInput(dsp, da, ExposureMask);
     XMapWindow(dsp, da);
 
-    ctx->surf = cairo_xlib_surface_create(dsp, da, DefaultVisual(dsp, screen), opt->width, opt->height);
+    ctx->surf = cairo_xlib_surface_create(dsp, da, XDefaultVisual(dsp, screen), opt->width, opt->height);
     cairo_xlib_surface_set_size(ctx->surf, opt->width, opt->height);
 
     return ctx;
@@ -121,6 +183,10 @@ void ca_xlib_cleanupTest (options_t* opt, library_context_t* ctx) {
     cairo_destroy(ctx->ctx);
     cairo_surface_flush (ctx->surf);
 }
+void ca_xlib_present (options_t* opt, library_context_t* ctx) {
+    XSync(cairo_xlib_surface_get_display(ctx->surf), 1);
+    //cairo_surface_flush (ctx->surf);
+}
 #endif
 
 /**
@@ -128,7 +194,7 @@ void ca_xlib_cleanupTest (options_t* opt, library_context_t* ctx) {
  * @param global options
  * @return a pointer to the library test context
  */
-library_context_t* ca_initLibrary(options_t* opt) {
+library_context_t* ca_image_initLibrary(options_t* opt) {
     library_context_t* ctx = (library_context_t*)calloc(1, sizeof(library_context_t));
 
     ctx->surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, opt->width, opt->height);
@@ -205,26 +271,10 @@ void ca_cleanupTest (options_t* opt, library_context_t* ctx) {
     cairo_destroy(ctx->ctx);
 }
 
-void ca_xlib_present (options_t* opt, library_context_t* ctx) {
-    XSync(cairo_xlib_surface_get_display(ctx->surf), 1);
-    //cairo_surface_flush (ctx->surf);
-}
 
-void init_cairo_tests (vgperf_context_t* ctx) {
-#if CAIRO_HAS_XLIB_SURFACE & WITH_CAIRO_X11
-    ctx->libName = "cairo x11";
-    ctx->init = (PFNinitLibrary) ca_xlib_initLibrary;
-    ctx->cleanup = (PFNcleanupLibrary) ca_xlib_cleanupLibrary;
-    ctx->present = (PFNtest) ca_xlib_present;
-#elif CAIRO_HAS_XCB_SURFACE & WITH_CAIRO_XCB
-
-#else
-    ctx->libName = "cairo";
-    ctx->init = (PFNinitLibrary) ca_initLibrary;
-    ctx->cleanup = (PFNcleanupLibrary) ca_cleanupLibrary;
-    ctx->present = NULL;
-#endif
+void init_cairo_test_context (vgperf_context_t* ctx) {
     ctx->saveImg = (PFNSaveImg) ca_saveImg;
+
     ctx->testCount = 0;
     ctx->tests = (test_t*)malloc(0);
 
@@ -233,6 +283,52 @@ void init_cairo_tests (vgperf_context_t* ctx) {
     addTest(ctx, "circles", ca_initTest, ca_circles_perform, ca_cleanupTest);
     addTest(ctx, "stars", ca_initTest, ca_stars_perform, ca_cleanupTest);
     //addTest(ctx, "anim1", ca_initTest, cairo_test1_perform, ca_cleanupTest);
-    addTest(ctx, "test1", NULL, cairo_test1_perform, NULL);
+    //addTest(ctx, "test1", NULL, cairo_test1_perform, NULL);
     //addTest(ctx, "single poly", ca_initTest, ca_single_poly_perform, ca_cleanupTest);
+}
+
+int init_cairo_tests (vgperf_context_t** libs) {
+    int ctxCount=0;
+    vgperf_context_t* ctx = NULL;
+
+#if (CAIRO_HAS_GL_SURFACE || CAIRO_HAS_GLESV2_SURFACE || CAIRO_HAS_GLESV3_SURFACE) && WITH_CAIRO_GL
+    vgperf_context_t* ctx = (vgperf_context_t*)malloc(sizeof(vgperf_context_t));
+    libs[ctxCount++] = ctx;
+
+#endif
+
+#if CAIRO_HAS_XLIB_SURFACE & WITH_CAIRO_XLIB
+    ctx = (vgperf_context_t*)malloc(sizeof(vgperf_context_t));
+    libs[ctxCount++] = ctx;
+
+    ctx->libName = "cairo xlib";
+    ctx->init = (PFNinitLibrary) ca_xlib_initLibrary;
+    ctx->cleanup = (PFNcleanupLibrary) ca_xlib_cleanupLibrary;
+    ctx->present = (PFNtest) ca_xlib_present;
+#endif
+
+#if CAIRO_HAS_XCB_SURFACE & WITH_CAIRO_XCB
+    ctx = (vgperf_context_t*)malloc(sizeof(vgperf_context_t));
+    libs[ctxCount++] = ctx;
+
+    ctx->libName = "cairo xcb";
+    ctx->init = (PFNinitLibrary) ca_xcb_initLibrary;
+    ctx->cleanup = (PFNcleanupLibrary) ca_xcb_cleanupLibrary;
+    ctx->present = (PFNtest) ca_xcb_present;
+#endif
+
+#if WITH_CAIRO_IMAGE
+    ctx = (vgperf_context_t*)malloc(sizeof(vgperf_context_t));
+    libs[ctxCount++] = ctx;
+
+    ctx->libName = "cairo img";
+    ctx->init = (PFNinitLibrary) ca_image_initLibrary;
+    ctx->cleanup = (PFNcleanupLibrary) ca_cleanupLibrary;
+    ctx->present = NULL;
+#endif
+
+    for (int i=0; i<ctxCount; i++)
+        init_cairo_test_context(libs[i]);
+
+    return ctxCount;
 }

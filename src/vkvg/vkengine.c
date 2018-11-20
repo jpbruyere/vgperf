@@ -148,7 +148,7 @@ vk_engine_t* vkengine_create (VkPhysicalDeviceType preferedGPU, uint32_t width, 
         }
     }
 
-    char const * dex [] = {"VK_KHR_swapchain"};
+    char const * dex [] = {VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME};
 #if VKVG_USE_VALIDATION
     uint32_t dlayCpt = 1;
     static char const * dlay [] = {"VK_LAYER_LUNARG_standard_validation"};

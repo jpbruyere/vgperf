@@ -2,5 +2,5 @@
 #define VKVG_PERF_H
 
 #include "../vgperf.h"
-void init_vkvg_tests (vgperf_context_t* ctx);
+int init_vkvg_tests (vgperf_context_t** libs);
 #endif
