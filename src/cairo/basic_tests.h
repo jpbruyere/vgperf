@@ -2,7 +2,7 @@
 #include <stdlib.h>
 
 #include "../vgperf.h"
-#include "common.h"
+#include "shapes.h"
 
 void ca_line_perform (options_t *opt, library_context_t* ctx)
 {

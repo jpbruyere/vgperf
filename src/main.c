@@ -355,7 +355,13 @@ double standard_deviation (const double data[], int n, double mean)
     sum_deviation += (data[i]-mean) * (data[i]-mean);
     return sqrt (sum_deviation / n);
 }
-
+vgperf_context_t* vgperf_context_create (const char *libName, PFNinitLibrary initLibrary, PFNcleanupLibrary cleanupLibrary, PFNtest present) {
+    vgperf_context_t* ctx = (vgperf_context_t*)malloc(sizeof(vgperf_context_t));
+    ctx->libName = libName;
+    ctx->init = initLibrary;
+    ctx->cleanup = cleanupLibrary;
+    ctx->present = present;
+}
 void addTest (vgperf_context_t* ctx, const char* testName, void* pfnInit, void* pfnPerform, void* pfncleanup) {
     ctx->tests = (test_t*)realloc(ctx->tests, (ctx->testCount + 1)*sizeof(test_t));
     test_t* test = &ctx->tests[ctx->testCount];

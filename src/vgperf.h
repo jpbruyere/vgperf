@@ -143,6 +143,8 @@ typedef struct _vgperf_context
 	int testCount;
 }vgperf_context_t;
 
+vgperf_context_t* vgperf_context_create (const char *libName, PFNinitLibrary initLibrary, PFNcleanupLibrary cleanupLibrary, PFNtest present);
+
 void addTest (vgperf_context_t *ctx, const char *testName, void *pfnInit, void *pfnPerform, void *pfncleanup);
 
 #endif // VGPERF_H

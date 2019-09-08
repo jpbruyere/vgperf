@@ -2,93 +2,9 @@
 #include "common.h"
 
 #include "basic_tests.h"
-#include "test1.h"
+//#include "test1.h"
 
-void ca_randomize_color (cairo_t *ctx) {
-    cairo_set_source_rgba(ctx,
-        (double)rnd()/RAND_MAX,
-        (double)rnd()/RAND_MAX,
-        (double)rnd()/RAND_MAX,
-        (double)rnd()/RAND_MAX
-    );
-}
-
-void ca_draw_shape (shape_t shape, options_t *opt, library_context_t* ctx) {
-    int w = opt->width;
-    int h = opt->height;
-
-    double x, y, z, v;
-
-    ca_randomize_color (ctx->ctx);
-
-    switch (shape) {
-    case SHAPE_LINE:
-        x = (double)rnd()/RAND_MAX * w;
-        y = (double)rnd()/RAND_MAX * h;
-        z = (double)rnd()/RAND_MAX * w;
-        v = (double)rnd()/RAND_MAX * h;
-
-        cairo_move_to(ctx->ctx, x, y);
-        cairo_line_to(ctx->ctx, z, v);
-        cairo_stroke(ctx->ctx);
-        break;
-    case SHAPE_RECTANGLE:
-        x = trunc( (0.5*(double)opt->width*rnd())/RAND_MAX );
-        y = trunc( (0.5*(double)opt->height*rnd())/RAND_MAX );
-        z = trunc( (0.5*(double)opt->width*rnd())/RAND_MAX ) + 1;
-        v = trunc( (0.5*(double)opt->height*rnd())/RAND_MAX ) + 1;
-
-        cairo_rectangle(ctx->ctx, x+1, y+1, z, v);
-
-        ca_draw(opt->drawMode, ctx->ctx);
-        break;
-    case SHAPE_ROUNDED_RECTANGLE:
-        break;
-    case SHAPE_CIRCLE:
-        x = (double)rnd()/RAND_MAX * w;
-        y = (double)rnd()/RAND_MAX * h;
-        v = (double)rnd()/RAND_MAX * MIN(w,h) / 2.0;
-
-        cairo_arc(ctx->ctx, x, y, v, 0, M_PI * 2.0);
-
-        ca_draw(opt->drawMode,ctx->ctx);
-        break;
-    case SHAPE_TRIANGLE:
-        break;
-    case SHAPE_STAR:
-        x = (double)rnd()/RAND_MAX * w;
-        y = (double)rnd()/RAND_MAX * h;
-        z = (float)rnd()/RAND_MAX *0.5 + 0.15; //scale
-
-        cairo_move_to (ctx->ctx, x+star_points[0][0]*z, y+star_points[0][1]*z);
-        for (int s=1; s<11; s++)
-            cairo_line_to (ctx->ctx, x+star_points[s][0]*z, y+star_points[s][1]*z);
-        cairo_close_path (ctx->ctx);
-
-        ca_draw(opt->drawMode,ctx->ctx);
-        break;
-    case SHAPE_RANDOM:
-        break;
-    }
-}
-
-void ca_draw (draw_mode_t drawMode, cairo_t *ctx) {
-    switch (drawMode) {
-    case DM_BOTH:
-        cairo_fill_preserve(ctx);
-        ca_randomize_color (ctx);
-        cairo_stroke(ctx);
-        break;
-    case DM_FILL:
-        cairo_fill(ctx);
-        break;
-    case DM_STROKE:
-        cairo_stroke(ctx);
-        break;
-    }
-}
-
-#if CAIRO_HAS_XCB_SURFACE & WITH_CAIRO_XCB
+#if defined(CAIRO_HAS_XCB_SURFACE) & defined(WITH_CAIRO_XCB)
 static xcb_visualtype_t *find_visual(xcb_connection_t *c, xcb_visualid_t visual)
 {
     xcb_screen_iterator_t screen_iter = xcb_setup_roots_iterator(xcb_get_setup(c));
@@ -150,7 +66,7 @@ void ca_xcb_present (options_t* opt, library_context_t* ctx) {
 
 #endif
 
-#if CAIRO_HAS_XLIB_SURFACE & WITH_CAIRO_XLIB
+#if defined(CAIRO_HAS_XLIB_SURFACE) & defined(WITH_CAIRO_XLIB)
 library_context_t* ca_xlib_initLibrary(options_t* opt) {
     library_context_t* ctx = (library_context_t*)calloc(1, sizeof(library_context_t));
 
@@ -190,11 +106,72 @@ void ca_xlib_present (options_t* opt, library_context_t* ctx) {
 #endif
 
 
-#if CAIRO_HAS_GL_SURFACE & WITH_CAIRO_GLX
+#if defined(WITH_CAIRO_GLES) & defined(WITH_GLFW3)
+static void error_callback(int error, const char* description)
+{
+    fputs(description, stderr);
+}
+library_context_t* ca_gles_initLibrary(options_t* opt) {
+    library_context_t* ctx = (library_context_t*)calloc(1, sizeof(library_context_t));
 
-#endif
+    glfwSetErrorCallback(error_callback);
 
-#if CAIRO_HAS_GL_SURFACE & WITH_CAIRO_GLX
+    if (!glfwInit())
+        errx (-1, "glfwInit failure for cairo egl\n");
+    GLFWwindow* window;
+
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API) ;
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2 );
+    glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_EGL_CONTEXT_API);
+
+    window = glfwCreateWindow(opt->width, opt->height, "cairo gles", NULL, NULL);
+
+    if (!window){
+        glfwTerminate();
+        errx (-1, "Could not create window with glfw for cairo egl\n");
+    }
+
+    int result = glfwGetWindowAttrib(window, GLFW_CLIENT_API) ;
+
+    EGLDisplay display = glfwGetEGLDisplay();
+    EGLContext eglctx = glfwGetEGLContext(window);
+
+    glfwMakeContextCurrent(window);
+    glfwSwapInterval(1);
+
+
+    cairo_device_t* cairo_device = cairo_egl_device_create (display, eglctx);
+    cairo_status_t status = cairo_device_status (cairo_device);
+    if (status != CAIRO_STATUS_SUCCESS)
+        errx (-1, "Could not create EGL device: (%d) %s\n", status, cairo_status_to_string (status) );
+
+    cairo_gl_device_set_thread_aware (cairo_device, 0);
+    ctx->surf = cairo_gl_surface_create_for_egl (cairo_device,
+                                                     glfwGetEGLSurface(window),
+                                                     opt->width, opt->height);
+
+    cairo_device_destroy (cairo_device);
+
+    glClearColor(1, 1, 1, 1);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    return ctx;
+
+}
+void ca_gles_cleanupLibrary (library_context_t* ctx) {
+
+    cairo_surface_destroy (ctx->surf);
+
+    glfwTerminate();
+    free(ctx);
+}
+void ca_gles_cleanupTest (options_t* opt, library_context_t* ctx) {
+    cairo_destroy(ctx->ctx);
+    cairo_surface_flush (ctx->surf);
+}
+void ca_gles_present (options_t* opt, library_context_t* ctx) {
+    cairo_gl_surface_swapbuffers (ctx->surf);
+}
 
 #endif
 
@@ -307,33 +284,31 @@ int init_cairo_tests (vgperf_context_t** libs) {
 #endif
 
 #if WITH_CAIRO_XLIB
-    ctx = (vgperf_context_t*)malloc(sizeof(vgperf_context_t));
-    libs[ctxCount++] = ctx;
-
-    ctx->libName = "cairo xlib";
-    ctx->init = (PFNinitLibrary) ca_xlib_initLibrary;
-    ctx->cleanup = (PFNcleanupLibrary) ca_xlib_cleanupLibrary;
-    ctx->present = (PFNtest) ca_xlib_present;
+    libs[ctxCount++] = vgperf_context_create("cairo xlib",
+                                             (PFNinitLibrary) ca_xlib_initLibrary,
+                                             (PFNcleanupLibrary) ca_xlib_cleanupLibrary,
+                                             (PFNtest) ca_xlib_present);
 #endif
 
 #if WITH_CAIRO_XCB
-    ctx = (vgperf_context_t*)malloc(sizeof(vgperf_context_t));
-    libs[ctxCount++] = ctx;
-
-    ctx->libName = "cairo xcb";
-    ctx->init = (PFNinitLibrary) ca_xcb_initLibrary;
-    ctx->cleanup = (PFNcleanupLibrary) ca_xcb_cleanupLibrary;
-    ctx->present = (PFNtest) ca_xcb_present;
+    libs[ctxCount++] = vgperf_context_create("cairo xcb",
+                                             (PFNinitLibrary) ca_xcb_initLibrary,
+                                             (PFNcleanupLibrary) ca_xcb_cleanupLibrary,
+                                             (PFNtest) ca_xcb_present);
 #endif
 
 #if WITH_CAIRO_IMAGE
-    ctx = (vgperf_context_t*)malloc(sizeof(vgperf_context_t));
-    libs[ctxCount++] = ctx;
+    libs[ctxCount++] = vgperf_context_create("cairo img",
+                                             (PFNinitLibrary) ca_image_initLibrary,
+                                             (PFNcleanupLibrary) ca_cleanupLibrary,
+                                             NULL);
+#endif
 
-    ctx->libName = "cairo img";
-    ctx->init = (PFNinitLibrary) ca_image_initLibrary;
-    ctx->cleanup = (PFNcleanupLibrary) ca_cleanupLibrary;
-    ctx->present = NULL;
+#if defined(WITH_CAIRO_GLES) & defined(WITH_GLFW3)
+    libs[ctxCount++] = vgperf_context_create("cairo es3",
+                                             (PFNinitLibrary) ca_gles_initLibrary,
+                                             (PFNcleanupLibrary) ca_gles_cleanupLibrary,
+                                             (PFNtest) ca_gles_present);
 #endif
 
     for (int i=0; i<ctxCount; i++)
