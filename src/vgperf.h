@@ -24,71 +24,71 @@
 #define TESTS_COUNT 6
 
 typedef enum _draw_mode_t {
-    DM_FILL = 0x1,
-    DM_STROKE = 0x2,
-    DM_BOTH = 0x3
+	DM_FILL = 0x1,
+	DM_STROKE = 0x2,
+	DM_BOTH = 0x3
 }draw_mode_t;
 
 typedef enum _antialias {
-    ANTIALIAS_NONE,
-    ANTIALIAS_DEFAULT,
-    ANTIALIAS_FAST,
-    ANTIALIAS_GOOD,
-    ANTIALIAS_BEST
+	ANTIALIAS_NONE,
+	ANTIALIAS_DEFAULT,
+	ANTIALIAS_FAST,
+	ANTIALIAS_GOOD,
+	ANTIALIAS_BEST
 } antialias_t;
 
 typedef enum _fill_type_t {
-    FILL_TYPE_SOLID,
-    FILL_TYPE_SURFACE,
-    FILL_TYPE_LINEAR,
-    FILL_TYPE_RADIAL,
+	FILL_TYPE_SOLID,
+	FILL_TYPE_SURFACE,
+	FILL_TYPE_LINEAR,
+	FILL_TYPE_RADIAL,
 } fill_type_t;
 
 typedef enum _line_cap_t {
-    LINE_CAP_BUTT,
-    LINE_CAP_ROUND,
-    LINE_CAP_SQUARE
+	LINE_CAP_BUTT,
+	LINE_CAP_ROUND,
+	LINE_CAP_SQUARE
 } line_cap_t;
 
 typedef enum _line_join_t {
-    LINE_JOIN_MITER,
-    LINE_JOIN_ROUND,
-    LINE_JOIN_BEVEL
+	LINE_JOIN_MITER,
+	LINE_JOIN_ROUND,
+	LINE_JOIN_BEVEL
 } line_join_t;
 
 typedef enum _shape_t {
-    SHAPE_LINE,
-    SHAPE_RECTANGLE,
-    SHAPE_ROUNDED_RECTANGLE,
-    SHAPE_CIRCLE,
-    SHAPE_TRIANGLE,
-    SHAPE_STAR,
-    SHAPE_RANDOM,
+	SHAPE_LINE,
+	SHAPE_RECTANGLE,
+	SHAPE_ROUNDED_RECTANGLE,
+	SHAPE_CIRCLE,
+	SHAPE_TRIANGLE,
+	SHAPE_STAR,
+	SHAPE_RANDOM,
 } shape_t;
 
 typedef struct _results_t {
-    double run_min;
-    double run_max;
-    double avg_time;
-    double median_time;
-    double std_deriv;
+	double run_min;
+	double run_max;
+	double avg_time;
+	double median_time;
+	double std_deriv;
 } results_t;
 
 typedef struct _options_t {
-    int runSingleTest;
-    int iterations;
-    int count;
-    int width;
-    int height;
-    int lineWidth;
-    line_cap_t capStyle;
-    line_join_t joinStyle;
-    fill_type_t fillType;
-    shape_t shape;
-    int present;
-    int saveImgs;
-    draw_mode_t drawMode;
-    antialias_t antialias;
+	int runSingleTest;
+	int iterations;
+	int count;
+	int width;
+	int height;
+	int lineWidth;
+	line_cap_t capStyle;
+	line_join_t joinStyle;
+	fill_type_t fillType;
+	shape_t shape;
+	int present;
+	int saveImgs;
+	draw_mode_t drawMode;
+	antialias_t antialias;
 } options_t;
 
 extern int star_points[11][2];
@@ -121,11 +121,11 @@ typedef void (*PFNSaveImg) (LibCtx ctx, const char* fileName);
  * @brief store each test functions per library and results
  */
 typedef struct _test {
-    char* test_name;
-    PFNtest init;//pre-test init, not included in duration measure (may be null)
-    PFNtest perform;//all processing here is included in time measurement
-    PFNtest cleanup;//post-test cleanup (may be null)
-    results_t results;
+	char* test_name;
+	PFNtest init;//pre-test init, not included in duration measure (may be null)
+	PFNtest perform;//all processing here is included in time measurement
+	PFNtest cleanup;//post-test cleanup (may be null)
+	results_t results;
 }test_t;
 
 /**
@@ -133,14 +133,14 @@ typedef struct _test {
  */
 typedef struct _vgperf_context
 {
-    char* libName;
-    LibCtx libCtx;//library context pointer, different for each libs with dedicated objs like device, etc.
-    PFNinitLibrary init;//library init and surface creation
-    PFNcleanupLibrary cleanup;//library cleanup
-    PFNSaveImg saveImg;
-    PFNtest present;//present image on screen if requested
-    test_t* tests;//test array
-    int testCount;
+	char* libName;
+	LibCtx libCtx;//library context pointer, different for each libs with dedicated objs like device, etc.
+	PFNinitLibrary init;//library init and surface creation
+	PFNcleanupLibrary cleanup;//library cleanup
+	PFNSaveImg saveImg;
+	PFNtest present;//present image on screen if requested
+	test_t* tests;//test array
+	int testCount;
 }vgperf_context_t;
 
 void addTest (vgperf_context_t *ctx, const char *testName, void *pfnInit, void *pfnPerform, void *pfncleanup);

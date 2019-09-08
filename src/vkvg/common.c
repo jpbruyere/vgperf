@@ -35,10 +35,10 @@ void vkvg_draw_shape (shape_t shape, options_t *opt, library_context_t* ctx) {
         vkvg_stroke(ctx->ctx);
         break;
     case SHAPE_RECTANGLE:
-        x = trunc( (0.5*(float)opt->width*rnd())/RAND_MAX );
-        y = trunc( (0.5*(float)opt->height*rnd())/RAND_MAX );
-        z = trunc( (0.5*(float)opt->width*rnd())/RAND_MAX ) + 1;
-        v = trunc( (0.5*(float)opt->height*rnd())/RAND_MAX ) + 1;
+        x = truncf( (0.5*(float)opt->width*rnd())/RAND_MAX );
+        y = truncf( (0.5*(float)opt->height*rnd())/RAND_MAX );
+        z = truncf( (0.5*(float)opt->width*rnd())/RAND_MAX ) + 1;
+        v = truncf( (0.5*(float)opt->height*rnd())/RAND_MAX ) + 1;
 
         vkvg_rectangle(ctx->ctx, x+1, y+1, z, v);
 
@@ -49,9 +49,9 @@ void vkvg_draw_shape (shape_t shape, options_t *opt, library_context_t* ctx) {
     case SHAPE_CIRCLE:
         x = (float)rnd()/RAND_MAX * w;
         y = (float)rnd()/RAND_MAX * h;
-        v = (float)rnd()/RAND_MAX * MIN(w,h) / 2.0;
+        v = (float)rnd()/RAND_MAX * MIN(w,h) * 0.5f;
 
-        vkvg_arc(ctx->ctx, x, y, v, 0, M_PI * 2.0);
+        vkvg_arc(ctx->ctx, x, y, v, 0, (float)M_PI * 2.0f);
 
         vkvg_draw(opt->drawMode,ctx->ctx);
         break;
@@ -107,7 +107,7 @@ void vkvg_present (options_t* opt, library_context_t* ctx) {
 library_context_t* initLibrary(options_t* opt) {
     library_context_t* ctx = (library_context_t*)calloc(1, sizeof(library_context_t));
 
-    ctx->vkEngine = vkengine_create (VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, opt->width, opt->height);
+    ctx->vkEngine = vkengine_create (VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_PRESENT_MODE_MAILBOX_KHR, opt->width, opt->height);
     VkhPresenter r = ctx->vkEngine->renderer;
 
     ctx->dev = vkvg_device_create (vkh_app_get_inst(ctx->vkEngine->app), r->dev->phy, r->dev->dev, r->qFam, 0);
@@ -166,6 +166,7 @@ void initTest(options_t* opt, library_context_t* ctx) {
         vkvg_set_line_join(ctx->ctx, VKVG_LINE_JOIN_ROUND);
         break;
     }
+    vkvg_set_fill_rule(ctx->ctx, VKVG_FILL_RULE_EVEN_ODD);
 
 }
 /**

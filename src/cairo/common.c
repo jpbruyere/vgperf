@@ -189,6 +189,15 @@ void ca_xlib_present (options_t* opt, library_context_t* ctx) {
 }
 #endif
 
+
+#if CAIRO_HAS_GL_SURFACE & WITH_CAIRO_GLX
+
+#endif
+
+#if CAIRO_HAS_GL_SURFACE & WITH_CAIRO_GLX
+
+#endif
+
 /**
  * @brief init library once at startup
  * @param global options
@@ -297,7 +306,7 @@ int init_cairo_tests (vgperf_context_t** libs) {
 
 #endif
 
-#if CAIRO_HAS_XLIB_SURFACE & WITH_CAIRO_XLIB
+#if WITH_CAIRO_XLIB
     ctx = (vgperf_context_t*)malloc(sizeof(vgperf_context_t));
     libs[ctxCount++] = ctx;
 
@@ -307,7 +316,7 @@ int init_cairo_tests (vgperf_context_t** libs) {
     ctx->present = (PFNtest) ca_xlib_present;
 #endif
 
-#if CAIRO_HAS_XCB_SURFACE & WITH_CAIRO_XCB
+#if WITH_CAIRO_XCB
     ctx = (vgperf_context_t*)malloc(sizeof(vgperf_context_t));
     libs[ctxCount++] = ctx;
 

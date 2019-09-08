@@ -75,23 +75,46 @@ void vkengine_dump_Infos (VkEngine e){
         printf("\n");
     }
 }
-vk_engine_t* vkengine_create (VkPhysicalDeviceType preferedGPU, uint32_t width, uint32_t height) {
+
+static VkDebugReportCallbackEXT dbgReport;
+
+vk_engine_t* vkengine_create (VkPhysicalDeviceType preferedGPU, VkPresentModeKHR presentMode, uint32_t width, uint32_t height) {
     vk_engine_t* e = (vk_engine_t*)calloc(1,sizeof(vk_engine_t));
 
     glfwInit();
     assert (glfwVulkanSupported()==GLFW_TRUE);
 
     uint32_t enabledExtsCount = 0, phyCount = 0;
-    const char ** enabledExts = glfwGetRequiredInstanceExtensions (&enabledExtsCount);
+    const char** gflwExts = glfwGetRequiredInstanceExtensions (&enabledExtsCount);
 
-    e->app = vkh_app_create("vkvgTest", enabledExtsCount, enabledExts);
+    const char* enabledExts [enabledExtsCount+2];
+
+    for (uint i=0;i<enabledExtsCount;i++)
+        enabledExts[i] = gflwExts[i];
+
+#if defined (VKVG_USE_VALIDATION)
+    const uint32_t enabledLayersCount = 1;
+    const char* enabledLayers[] = {"VK_LAYER_KHRONOS_validation"};//, "VK_LAYER_RENDERDOC_Capture"};
+#else
+    const uint32_t enabledLayersCount = 0;
+    const char* enabledLayers[] = {NULL};
+#endif
+#if defined (DEBUG)
+    enabledExts[enabledExtsCount] = "VK_EXT_debug_report";
+    enabledExtsCount++;
+    enabledExts[enabledExtsCount] = "VK_EXT_debug_utils";
+    enabledExtsCount++;
+#endif
+
+
+    e->app = vkh_app_create("vkvgTest", enabledLayersCount, enabledLayers, enabledExtsCount, enabledExts);
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE,  GLFW_TRUE);
     glfwWindowHint(GLFW_FLOATING,   GLFW_FALSE);
     glfwWindowHint(GLFW_DECORATED,  GLFW_TRUE);
 
-    e->window = glfwCreateWindow (width, height, "Window Title", NULL, NULL);
+    e->window = glfwCreateWindow ((int)width, (int)height, "Window Title", NULL, NULL);
     VkSurfaceKHR surf;
 
     assert (glfwCreateWindowSurface(e->app->inst, e->window, NULL, &surf)==VK_SUCCESS);
@@ -100,83 +123,56 @@ vk_engine_t* vkengine_create (VkPhysicalDeviceType preferedGPU, uint32_t width, 
     VkhPhyInfo* phys = vkh_app_get_phyinfos (e->app, &phyCount, surf);
 
     VkhPhyInfo pi = NULL;
-    for (int i=0; i<phyCount; i++){
+    for (uint i=0; i<phyCount; i++){
         pi = phys[i];
-        if (pi->properties.deviceType == preferedGPU)
+        if (vkh_phyinfo_get_properties(pi).deviceType == preferedGPU)
             break;
     }
 
-    e->memory_properties = pi->memProps;
-    e->gpu_props = pi->properties;
+    e->memory_properties = vkh_phyinfo_get_memory_properties(pi);
+    e->gpu_props = vkh_phyinfo_get_properties(pi);
 
-    uint32_t qCount = 0;
-    VkDeviceQueueCreateInfo pQueueInfos[3];
     float queue_priorities[] = {0.0};
-
-    VkDeviceQueueCreateInfo qiG = { .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+    VkDeviceQueueCreateInfo pQueueInfos[] = {{ .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
                                    .queueCount = 1,
-                                   .queueFamilyIndex = pi->gQueue,
-                                   .pQueuePriorities = queue_priorities };
-    VkDeviceQueueCreateInfo qiC = { .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
-                                   .queueCount = 1,
-                                   .queueFamilyIndex = pi->cQueue,
-                                   .pQueuePriorities = queue_priorities };
-    VkDeviceQueueCreateInfo qiT = { .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
-                                   .queueCount = 1,
-                                   .queueFamilyIndex = pi->tQueue,
-                                   .pQueuePriorities = queue_priorities };
+                                   .queueFamilyIndex = vkh_phy_info_get_graphic_queue_index(pi),
+                                   .pQueuePriorities = queue_priorities }};
 
-    if (pi->gQueue == pi->cQueue){
-        if(pi->gQueue == pi->tQueue){
-            qCount=1;
-            pQueueInfos[0] = qiG;
-        }else{
-            qCount=2;
-            pQueueInfos[0] = qiG;
-            pQueueInfos[1] = qiT;
-        }
-    }else{
-        if((pi->gQueue == pi->tQueue) || (pi->cQueue==pi->tQueue)){
-            qCount=2;
-            pQueueInfos[0] = qiG;
-            pQueueInfos[1] = qiC;
-        }else{
-            qCount=3;
-            pQueueInfos[0] = qiG;
-            pQueueInfos[1] = qiC;
-            pQueueInfos[2] = qiT;
-        }
-    }
-
-    char const * dex [] = {VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME};
-#if VKVG_USE_VALIDATION
-    uint32_t dlayCpt = 1;
-    static char const * dlay [] = {"VK_LAYER_LUNARG_standard_validation"};
+#if defined(DEBUG) && defined(VKVG_USE_VALIDATION)
+    char const * dex [] = {"VK_KHR_swapchain", "VK_EXT_debug_marker"};
+    enabledExtsCount = 2;
 #else
-    uint32_t dlayCpt = 0;
-    static char const * dlay [] = {};
+    char const * dex [] = {"VK_KHR_swapchain"};
+    enabledExtsCount = 1;
 #endif
+
+
     VkPhysicalDeviceFeatures enabledFeatures = {
         .fillModeNonSolid = true,
+        //.sampleRateShading = true
     };
 
     VkDeviceCreateInfo device_info = { .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
-                                       .queueCreateInfoCount = qCount,
-                                       .pQueueCreateInfos = &pQueueInfos,
-                                       .enabledLayerCount = dlayCpt,
-                                       .ppEnabledLayerNames = dlay,
-                                       .enabledExtensionCount = 1,
+                                       .queueCreateInfoCount = 1,
+                                       .pQueueCreateInfos = (VkDeviceQueueCreateInfo*)&pQueueInfos,
+                                       .enabledExtensionCount = enabledExtsCount,
                                        .ppEnabledExtensionNames = dex,
                                        .pEnabledFeatures = &enabledFeatures
                                      };
 
-    VkDevice dev;
-    VK_CHECK_RESULT(vkCreateDevice (pi->phy, &device_info, NULL, &dev));
-    e->dev = vkh_device_create(pi->phy, dev);
+    e->dev = vkh_device_create (e->app, pi, &device_info);
+
+#if DEBUG
+    dbgReport = vkh_device_create_debug_report (e->dev,
+    //VK_DEBUG_REPORT_INFORMATION_BIT_EXT|
+            VK_DEBUG_REPORT_ERROR_BIT_EXT|
+            VK_DEBUG_REPORT_WARNING_BIT_EXT|
+            VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT|
+            VK_DEBUG_REPORT_DEBUG_BIT_EXT);
+#endif
 
     e->renderer = vkh_presenter_create
-            (e->dev, pi->pQueue, surf, width, height, VK_FORMAT_B8G8R8A8_UNORM, VK_PRESENT_MODE_MAILBOX_KHR);
-
+            (e->dev, (uint32_t) pi->pQueue, surf, width, height, VK_FORMAT_B8G8R8A8_UNORM, presentMode);
 
     vkh_app_free_phyinfos (phyCount, phys);
 

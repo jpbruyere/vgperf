@@ -48,7 +48,7 @@ void printHelp () {
 }
 
 options_t initOptions (int argc, char *argv[]) {
-    options_t opt = {};
+    options_t opt = {0};
     opt.runSingleTest = -1;//run all tests
     opt.iterations = 100;
     opt.count = 100;
@@ -56,7 +56,7 @@ options_t initOptions (int argc, char *argv[]) {
     opt.height = 800;
     opt.present = 1;
     opt.lineWidth = 1;
-    opt.drawMode = DM_BOTH;
+    opt.drawMode = DM_FILL;
     opt.antialias = ANTIALIAS_DEFAULT;
     opt.capStyle = LINE_CAP_BUTT;
     opt.joinStyle = LINE_JOIN_MITER;
