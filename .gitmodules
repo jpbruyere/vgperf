@@ -1,3 +1,6 @@
 [submodule "external/vkh"]
 	path = external/vkh
 	url = http://gitlab.com/jpbruyere/vkhelpers.git
+[submodule "external/skia"]
+	path = external/skia
+	url = https://github.com/jpbruyere/skia.git
