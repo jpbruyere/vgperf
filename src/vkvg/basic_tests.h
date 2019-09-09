@@ -4,7 +4,7 @@
 #include "../vgperf.h"
 #include "common.h"
 
-void line_perform (options_t *opt, library_context_t* ctx)
+void vkvg_line_perform (options_t *opt, library_context_t* ctx)
 {
     for (int i=0; i<opt->count; i++)
         vkvg_draw_shape(SHAPE_LINE, opt, ctx);
@@ -30,18 +30,18 @@ void single_poly_perform (options_t *opt, library_context_t* ctx)
     vkvg_draw(opt->drawMode, ctx->ctx);
 }
 
-void rectangles_perform (options_t *opt, library_context_t* ctx)
+void vkvg_rectangles_perform (options_t *opt, library_context_t* ctx)
 {
     for (int i=0; i<opt->count; i++)
         vkvg_draw_shape(SHAPE_RECTANGLE, opt, ctx);
 }
 
-void circles_perform (options_t *opt, library_context_t* ctx) {
+void vkvg_circles_perform (options_t *opt, library_context_t* ctx) {
     for (int i=0; i<opt->count; i++)
         vkvg_draw_shape(SHAPE_CIRCLE, opt, ctx);
 }
 
-void stars_perform (options_t *opt, library_context_t* ctx) {
+void vkvg_stars_perform (options_t *opt, library_context_t* ctx) {
     for (int i=0; i<opt->count; i++)
         vkvg_draw_shape(SHAPE_STAR, opt, ctx);
 }

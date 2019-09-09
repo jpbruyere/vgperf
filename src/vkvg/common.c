@@ -4,98 +4,12 @@
 #include "vkh_presenter.h"
 
 #include "basic_tests.h"
-#include "test1.h"
-
-void randomize_color (VkvgContext ctx) {
-    vkvg_set_source_rgba(ctx,
-        (float)rnd()/RAND_MAX,
-        (float)rnd()/RAND_MAX,
-        (float)rnd()/RAND_MAX,
-        (float)rnd()/RAND_MAX
-    );
-}
-
-void vkvg_draw_shape (shape_t shape, options_t *opt, library_context_t* ctx) {
-    int w = opt->width;
-    int h = opt->height;
-
-    float x, y, z, v;
-
-    randomize_color (ctx->ctx);
-
-    switch (shape) {
-    case SHAPE_LINE:
-        x = (float)rnd()/RAND_MAX * w;
-        y = (float)rnd()/RAND_MAX * h;
-        z = (float)rnd()/RAND_MAX * w;
-        v = (float)rnd()/RAND_MAX * h;
-
-        vkvg_move_to(ctx->ctx, x, y);
-        vkvg_line_to(ctx->ctx, z, v);
-        vkvg_stroke(ctx->ctx);
-        break;
-    case SHAPE_RECTANGLE:
-        x = truncf( (0.5*(float)opt->width*rnd())/RAND_MAX );
-        y = truncf( (0.5*(float)opt->height*rnd())/RAND_MAX );
-        z = truncf( (0.5*(float)opt->width*rnd())/RAND_MAX ) + 1;
-        v = truncf( (0.5*(float)opt->height*rnd())/RAND_MAX ) + 1;
-
-        vkvg_rectangle(ctx->ctx, x+1, y+1, z, v);
-
-        vkvg_draw(opt->drawMode, ctx->ctx);
-        break;
-    case SHAPE_ROUNDED_RECTANGLE:
-        break;
-    case SHAPE_CIRCLE:
-        x = (float)rnd()/RAND_MAX * w;
-        y = (float)rnd()/RAND_MAX * h;
-        v = (float)rnd()/RAND_MAX * MIN(w,h) * 0.5f;
-
-        vkvg_arc(ctx->ctx, x, y, v, 0, (float)M_PI * 2.0f);
-
-        vkvg_draw(opt->drawMode,ctx->ctx);
-        break;
-    case SHAPE_TRIANGLE:
-        break;
-    case SHAPE_STAR:
-        x = (float)rnd()/RAND_MAX * w;
-        y = (float)rnd()/RAND_MAX * h;
-        z = (float)rnd()/RAND_MAX *0.5 + 0.15; //scale
-
-        vkvg_move_to (ctx->ctx, x+star_points[0][0]*z, y+star_points[0][1]*z);
-        for (int s=1; s<11; s++)
-            vkvg_line_to (ctx->ctx, x+star_points[s][0]*z, y+star_points[s][1]*z);
-        vkvg_close_path (ctx->ctx);
-
-        vkvg_draw(opt->drawMode,ctx->ctx);
-        break;
-    case SHAPE_RANDOM:
-        break;
-    }
-}
-
-void vkvg_draw (draw_mode_t drawMode, VkvgContext ctx) {
-    switch (drawMode) {
-    case DM_BOTH:
-        vkvg_fill_preserve(ctx);
-        randomize_color(ctx);
-        vkvg_stroke(ctx);
-        break;
-    case DM_FILL:
-        vkvg_fill(ctx);
-        break;
-    case DM_STROKE:
-        vkvg_stroke(ctx);
-        break;
-    }
-}
 
 void vkvg_present (options_t* opt, library_context_t* ctx) {
     vkvg_flush (ctx->ctx);
     VkhPresenter r = ctx->vkEngine->renderer;
-    //glfwPollEvents();
     if (!vkh_presenter_draw (r))
-        vkh_presenter_build_blit_cmd (r, vkvg_surface_get_vk_image(ctx->surf), opt->width, opt->height);
+        vkh_presenter_build_blit_cmd (r, vkvg_surface_get_vk_image(ctx->surf), (uint)opt->width, (uint)opt->height);
     vkDeviceWaitIdle(r->dev->dev);
 }
 
@@ -104,18 +18,18 @@ void vkvg_present (options_t* opt, library_context_t* ctx) {
  * @param global options
  * @return a pointer to the library test context
  */
-library_context_t* initLibrary(options_t* opt) {
+library_context_t* vkvg_initLibrary(options_t* opt) {
     library_context_t* ctx = (library_context_t*)calloc(1, sizeof(library_context_t));
 
-    ctx->vkEngine = vkengine_create (VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_PRESENT_MODE_MAILBOX_KHR, opt->width, opt->height);
+    ctx->vkEngine = vkengine_create (VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_PRESENT_MODE_MAILBOX_KHR, (uint)opt->width, (uint)opt->height);
     VkhPresenter r = ctx->vkEngine->renderer;
 
     ctx->dev = vkvg_device_create (vkh_app_get_inst(ctx->vkEngine->app), r->dev->phy, r->dev->dev, r->qFam, 0);
 
-    ctx->surf = vkvg_surface_create (ctx->dev, opt->width, opt->height);
+    ctx->surf = vkvg_surface_create (ctx->dev, (uint)opt->width, (uint)opt->height);
 
     if (opt->present == 1)
-        vkh_presenter_build_blit_cmd (r, vkvg_surface_get_vk_image(ctx->surf), opt->width, opt->height);
+        vkh_presenter_build_blit_cmd (r, vkvg_surface_get_vk_image(ctx->surf), (uint)opt->width, (uint)opt->height);
 
     return ctx;
 }
@@ -123,7 +37,7 @@ library_context_t* initLibrary(options_t* opt) {
  * @brief cleanup Library and release test context pointer
  * @param library test context
  */
-void cleanupLibrary (library_context_t* ctx) {
+void vkvg_cleanupLibrary (library_context_t* ctx) {
     vkvg_surface_destroy(ctx->surf);
 
     vkvg_device_destroy (ctx->dev);
@@ -137,7 +51,7 @@ void cleanupLibrary (library_context_t* ctx) {
  * @param global options
  * @param library context
  */
-void initTest(options_t* opt, library_context_t* ctx) {
+void vkvg_initTest(options_t* opt, library_context_t* ctx) {
     vkvg_surface_clear(ctx->surf);
     ctx->ctx = vkvg_create(ctx->surf);
 
@@ -174,10 +88,10 @@ void initTest(options_t* opt, library_context_t* ctx) {
  * @param global options
  * @param library context
  */
-void cleanupTest (options_t* opt, library_context_t* ctx) {
+void vkvg_cleanupTest (options_t* opt, library_context_t* ctx) {
     vkvg_destroy(ctx->ctx);
 }
-void saveImg (library_context_t* ctx, const char* fileName) {
+void vkvg_saveImg (library_context_t* ctx, const char* fileName) {
     vkvg_surface_write_to_png(ctx->surf, fileName);
 }
 /**
@@ -191,18 +105,18 @@ int init_vkvg_tests (vgperf_context_t** libs) {
     libs[0] = ctx;
 
     ctx->libName    = "vkvg";
-    ctx->init       = (PFNinitLibrary) initLibrary;
-    ctx->cleanup    = (PFNcleanupLibrary) cleanupLibrary;
-    ctx->saveImg    = (PFNSaveImg) saveImg;
+    ctx->init       = (PFNinitLibrary) vkvg_initLibrary;
+    ctx->cleanup    = (PFNcleanupLibrary) vkvg_cleanupLibrary;
+    ctx->saveImg    = (PFNSaveImg) vkvg_saveImg;
     ctx->present    = (PFNtest) vkvg_present;
 
     ctx->testCount  = 0;
     ctx->tests      = (test_t*)malloc(0);
 
-    addTest (ctx, "lines stroke", initTest, line_perform, cleanupTest);
-    addTest (ctx, "rectangles", initTest, rectangles_perform, cleanupTest);
-    addTest (ctx, "circles", initTest, circles_perform, cleanupTest);
-    addTest (ctx, "stars", initTest, stars_perform, cleanupTest);
+    addTest (ctx, "lines stroke", vkvg_initTest, vkvg_line_perform, vkvg_cleanupTest);
+    addTest (ctx, "rectangles", vkvg_initTest, vkvg_rectangles_perform, vkvg_cleanupTest);
+    addTest (ctx, "circles", vkvg_initTest, vkvg_circles_perform, vkvg_cleanupTest);
+    addTest (ctx, "stars", vkvg_initTest, vkvg_stars_perform, vkvg_cleanupTest);
     //addTest (ctx, "test1", NULL, vkvg_test1_perform, NULL);
     //addTest(ctx, "single poly", initTest, single_poly_perform, cleanupTest);
 

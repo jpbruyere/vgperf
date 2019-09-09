@@ -92,9 +92,9 @@ vk_engine_t* vkengine_create (VkPhysicalDeviceType preferedGPU, VkPresentModeKHR
     for (uint i=0;i<enabledExtsCount;i++)
         enabledExts[i] = gflwExts[i];
 
-#if defined (VKVG_USE_VALIDATION)
-    const uint32_t enabledLayersCount = 1;
-    const char* enabledLayers[] = {"VK_LAYER_KHRONOS_validation"};//, "VK_LAYER_RENDERDOC_Capture"};
+#if defined (USE_VALIDATION)
+    const uint32_t enabledLayersCount = 2;
+    const char* enabledLayers[] = {"VK_LAYER_KHRONOS_validation", "VK_LAYER_RENDERDOC_Capture"};
 #else
     const uint32_t enabledLayersCount = 0;
     const char* enabledLayers[] = {NULL};
@@ -138,7 +138,7 @@ vk_engine_t* vkengine_create (VkPhysicalDeviceType preferedGPU, VkPresentModeKHR
                                    .queueFamilyIndex = vkh_phy_info_get_graphic_queue_index(pi),
                                    .pQueuePriorities = queue_priorities }};
 
-#if defined(DEBUG) && defined(VKVG_USE_VALIDATION)
+#if defined(DEBUG) && defined(USE_VALIDATION)
     char const * dex [] = {"VK_KHR_swapchain", "VK_EXT_debug_marker"};
     enabledExtsCount = 2;
 #else
@@ -178,7 +178,9 @@ vk_engine_t* vkengine_create (VkPhysicalDeviceType preferedGPU, VkPresentModeKHR
 
     return e;
 }
-
+inline void vkengine_wait_device_idle (VkEngine e) {
+    vkDeviceWaitIdle(e->dev->dev);
+}
 void vkengine_destroy (VkEngine e) {
     vkDeviceWaitIdle(e->dev->dev);
 
@@ -218,6 +220,9 @@ VkDevice vkengine_get_device (VkEngine e){
 }
 VkPhysicalDevice vkengine_get_physical_device (VkEngine e){
     return e->dev->phy;
+}
+VkInstance vkengine_get_instance (VkEngine e){
+    return vkh_app_get_inst(e->app);
 }
 VkQueue vkengine_get_queue (VkEngine e){
     return e->renderer->queue;

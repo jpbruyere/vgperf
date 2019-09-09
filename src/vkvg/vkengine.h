@@ -49,12 +49,14 @@ typedef struct _vk_engine_t {
 
 vk_engine_t* vkengine_create(VkPhysicalDeviceType preferedGPU, VkPresentModeKHR presentMode, uint32_t width, uint32_t height);
 
+void vkengine_wait_device_idle (VkEngine e);
 void vkengine_destroy       (VkEngine e);
 bool vkengine_should_close  (VkEngine e);
 void vkengine_close         (VkEngine e);
 void vkengine_dump_Infos    (VkEngine e);
 VkDevice            vkengine_get_device         (VkEngine e);
 VkPhysicalDevice    vkengine_get_physical_device(VkEngine e);
+VkInstance          vkengine_get_instance       (VkEngine e);
 VkQueue             vkengine_get_queue          (VkEngine e);
 uint32_t            vkengine_get_queue_fam_idx  (VkEngine e);
 

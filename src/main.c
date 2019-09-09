@@ -1,11 +1,15 @@
 #include "vgperf.h"
 
-#if WITH_VKVG
+#ifdef WITH_VKVG
 #include "vkvg/vgperf.h"
 #endif
 
-#if WITH_CAIRO
+#ifdef WITH_CAIRO
 #include "cairo/vgperf.h"
+#endif
+
+#ifdef WITH_SKIA
+#include "skia/vgperf.h"
 #endif
 
 int star_points[11][2] = {
@@ -453,14 +457,17 @@ int main(int argc, char *argv[]) {
     vgperf_context_t* libs[10];
     int libCpt = 0;
 
-#if WITH_VKVG
+#ifdef WITH_VKVG
     libCpt += init_vkvg_tests (&libs[libCpt]);
 #endif
 
-#if WITH_CAIRO
+#ifdef WITH_CAIRO
     libCpt += init_cairo_tests (&libs[libCpt]);
 #endif
 
+#ifdef WITH_SKIA
+    libCpt += init_skia_tests (&libs[libCpt]);
+#endif
     for (uint i=0; i<libCpt; i++)
         test_library(&opt, libs[i]);
 

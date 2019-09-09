@@ -277,27 +277,27 @@ int init_cairo_tests (vgperf_context_t** libs) {
     int ctxCount=0;
     vgperf_context_t* ctx = NULL;
 
-#if (CAIRO_HAS_GL_SURFACE || CAIRO_HAS_GLESV2_SURFACE || CAIRO_HAS_GLESV3_SURFACE) && WITH_CAIRO_GL
+#if (defined(CAIRO_HAS_GL_SURFACE) || defined(CAIRO_HAS_GLESV2_SURFACE) || defined(CAIRO_HAS_GLESV3_SURFACE)) && defined(WITH_CAIRO_GL)
     vgperf_context_t* ctx = (vgperf_context_t*)malloc(sizeof(vgperf_context_t));
     libs[ctxCount++] = ctx;
 
 #endif
 
-#if WITH_CAIRO_XLIB
+#ifdef WITH_CAIRO_XLIB
     libs[ctxCount++] = vgperf_context_create("cairo xlib",
                                              (PFNinitLibrary) ca_xlib_initLibrary,
                                              (PFNcleanupLibrary) ca_xlib_cleanupLibrary,
                                              (PFNtest) ca_xlib_present);
 #endif
 
-#if WITH_CAIRO_XCB
+#ifdef WITH_CAIRO_XCB
     libs[ctxCount++] = vgperf_context_create("cairo xcb",
                                              (PFNinitLibrary) ca_xcb_initLibrary,
                                              (PFNcleanupLibrary) ca_xcb_cleanupLibrary,
                                              (PFNtest) ca_xcb_present);
 #endif
 
-#if WITH_CAIRO_IMAGE
+#ifdef WITH_CAIRO_IMAGE
     libs[ctxCount++] = vgperf_context_create("cairo img",
                                              (PFNinitLibrary) ca_image_initLibrary,
                                              (PFNcleanupLibrary) ca_cleanupLibrary,
