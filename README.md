@@ -5,6 +5,7 @@ To build skia:
 ```
 git submodule update --init --recursive
 cd external/skia
+python2 tools/git-sync-deps
 bin/gn gen out/shared --args='is_official_build=true is_component_build=true skia_use_vulkan=true'
 ninja -C out/shared
 ```
