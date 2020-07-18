@@ -39,12 +39,12 @@
 typedef struct _vk_engine_t* VkEngine;
 
 typedef struct _vk_engine_t {
-    VkhApp              app;
-    VkPhysicalDeviceMemoryProperties    memory_properties;
-    VkPhysicalDeviceProperties          gpu_props;
-    VkhDevice           dev;
-    GLFWwindow*         window;
-    VkhPresenter        renderer;
+	VkhApp              app;
+	VkPhysicalDeviceMemoryProperties    memory_properties;
+	VkPhysicalDeviceProperties          gpu_props;
+	VkhDevice           dev;
+	GLFWwindow*         window;
+	VkhPresenter        renderer;
 }vk_engine_t;
 
 vk_engine_t* vkengine_create(VkPhysicalDeviceType preferedGPU, VkPresentModeKHR presentMode, uint32_t width, uint32_t height);
@@ -54,6 +54,7 @@ void vkengine_destroy       (VkEngine e);
 bool vkengine_should_close  (VkEngine e);
 void vkengine_close         (VkEngine e);
 void vkengine_dump_Infos    (VkEngine e);
+
 VkSampleCountFlagBits vkengine_get_MaxUsableSampleCount   (VkSampleCountFlags counts);
 
 VkDevice            vkengine_get_device         (VkEngine e);
