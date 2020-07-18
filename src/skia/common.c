@@ -45,42 +45,49 @@ void skia_cleanupLibrary (library_context_t* ctx) {
 void skia_initTest(options_t* opt, library_context_t* ctx) {
     ctx->ctx = sk_surface_get_canvas(ctx->surf);
     ctx->paint = sk_paint_new();
-    sk_paint_set_antialias(ctx->paint, true);
+
+    switch (opt->antialias) {
+    case ANTIALIAS_DEFAULT:
+    case ANTIALIAS_NONE:
+        sk_paint_set_antialias(ctx->paint, false);
+        break;
+    case ANTIALIAS_FAST:
+    case ANTIALIAS_GOOD:
+    case ANTIALIAS_BEST:
+        sk_paint_set_antialias(ctx->paint, true);
+        break;
+    }
+
     //clear image
     sk_paint_t* fill = sk_paint_new();
-    sk_paint_set_color(fill, sk_color_set_argb(0xFF, 0x00, 0x00, 0x00));
+    sk_paint_set_color(fill, sk_color_set_argb(0xFFu, 0x00, 0x00, 0x00));
     sk_canvas_draw_paint(ctx->ctx, fill);
-    sk_paint_delete(fill);
+    sk_paint_delete(fill);    
 
-    //ctx->paint = sk_paint_new();
-    /*vkvg_surface_clear(ctx->surf);
-
-    //cairo_set_antialias (ctx->ctx, CAIRO_ANTIALIAS_NONE);
-    vkvg_set_line_width (ctx->ctx, opt->lineWidth);
+    sk_paint_set_stroke_width(ctx->paint, opt->lineWidth);
 
     switch (opt->capStyle) {
     case LINE_CAP_BUTT:
-        vkvg_set_line_cap(ctx->ctx, VKVG_LINE_CAP_BUTT);
+        sk_paint_set_stroke_cap (ctx->paint, BUTT_SK_STROKE_CAP);
         break;
     case LINE_CAP_ROUND:
-        vkvg_set_line_cap(ctx->ctx, VKVG_LINE_CAP_ROUND);
+        sk_paint_set_stroke_cap (ctx->paint, ROUND_SK_STROKE_CAP);
         break;
     case LINE_CAP_SQUARE:
-        vkvg_set_line_cap(ctx->ctx, VKVG_LINE_CAP_SQUARE);
+        sk_paint_set_stroke_cap (ctx->paint, SQUARE_SK_STROKE_CAP);
         break;
     }
     switch (opt->joinStyle) {
     case LINE_JOIN_MITER:
-        vkvg_set_line_join(ctx->ctx, VKVG_LINE_JOIN_MITER);
+        sk_paint_set_stroke_join (ctx->paint, MITER_SK_STROKE_JOIN);
         break;
     case LINE_JOIN_BEVEL:
-        vkvg_set_line_join(ctx->ctx, VKVG_LINE_JOIN_BEVEL);
+        sk_paint_set_stroke_join (ctx->paint, BEVEL_SK_STROKE_JOIN);
         break;
     case LINE_JOIN_ROUND:
-        vkvg_set_line_join(ctx->ctx, VKVG_LINE_JOIN_ROUND);
+        sk_paint_set_stroke_join (ctx->paint, ROUND_SK_STROKE_JOIN);
         break;
-    }
-    vkvg_set_fill_rule(ctx->ctx, VKVG_FILL_RULE_EVEN_ODD);*/
+    }    
 
 }
 void skia_cleanupTest (options_t* opt, library_context_t* ctx) {

@@ -37,7 +37,7 @@ bool vkeCheckPhyPropBlitSource (VkEngine e) {
     //VK_IMAGE_USAGE_SAMPLED_BIT|VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT|VK_IMAGE_USAGE_TRANSFER_SRC_BIT|VK_IMAGE_USAGE_TRANSFER_DST_BIT
 }
 
-VkSampleCountFlagBits getMaxUsableSampleCount(VkSampleCountFlags counts)
+VkSampleCountFlagBits vkengine_get_MaxUsableSampleCount(VkSampleCountFlags counts)
 {
     if (counts & VK_SAMPLE_COUNT_64_BIT) { return VK_SAMPLE_COUNT_64_BIT; }
     if (counts & VK_SAMPLE_COUNT_32_BIT) { return VK_SAMPLE_COUNT_32_BIT; }
@@ -49,7 +49,7 @@ VkSampleCountFlagBits getMaxUsableSampleCount(VkSampleCountFlags counts)
 }
 
 void vkengine_dump_Infos (VkEngine e){
-    printf("max samples = %d\n", getMaxUsableSampleCount(e->gpu_props.limits.framebufferColorSampleCounts));
+    printf("max samples = %d\n", vkengine_get_MaxUsableSampleCount(e->gpu_props.limits.framebufferColorSampleCounts));
     printf("max tex2d size = %d\n", e->gpu_props.limits.maxImageDimension2D);
     printf("max tex array layers = %d\n", e->gpu_props.limits.maxImageArrayLayers);
     printf("max mem alloc count = %d\n", e->gpu_props.limits.maxMemoryAllocationCount);
@@ -87,10 +87,13 @@ vk_engine_t* vkengine_create (VkPhysicalDeviceType preferedGPU, VkPresentModeKHR
     uint32_t enabledExtsCount = 0, phyCount = 0;
     const char** gflwExts = glfwGetRequiredInstanceExtensions (&enabledExtsCount);
 
-    const char* enabledExts [enabledExtsCount+2];
+    const char* enabledExts [enabledExtsCount+3];
 
     for (uint i=0;i<enabledExtsCount;i++)
         enabledExts[i] = gflwExts[i];
+
+    enabledExts[enabledExtsCount] = "VK_KHR_get_physical_device_properties2";
+    enabledExtsCount++;
 
 #if defined (USE_VALIDATION)
     const uint32_t enabledLayersCount = 2;
@@ -139,11 +142,11 @@ vk_engine_t* vkengine_create (VkPhysicalDeviceType preferedGPU, VkPresentModeKHR
                                    .pQueuePriorities = queue_priorities }};
 
 #if defined(DEBUG) && defined(USE_VALIDATION)
-    char const * dex [] = {"VK_KHR_swapchain", "VK_EXT_debug_marker"};
-    enabledExtsCount = 2;
+    char const * dex [] = {"VK_KHR_swapchain", "VK_KHR_push_descriptor", "VK_EXT_debug_marker"};
+    enabledExtsCount = 3;
 #else
-    char const * dex [] = {"VK_KHR_swapchain"};
-    enabledExtsCount = 1;
+    char const * dex [] = {"VK_KHR_swapchain", "VK_KHR_push_descriptor"};
+    enabledExtsCount = 2;
 #endif
 
 
@@ -188,6 +191,10 @@ void vkengine_destroy (VkEngine e) {
 
     vkh_presenter_destroy (e->renderer);
     vkDestroySurfaceKHR (e->app->inst, surf, NULL);
+
+#if DEBUG
+    vkh_device_destroy_debug_report(e->dev, dbgReport);
+#endif
 
     vkDestroyDevice (e->dev->dev, NULL);
 

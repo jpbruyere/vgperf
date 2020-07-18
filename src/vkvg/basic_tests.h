@@ -32,8 +32,11 @@ void single_poly_perform (options_t *opt, library_context_t* ctx)
 
 void vkvg_rectangles_perform (options_t *opt, library_context_t* ctx)
 {
-    for (int i=0; i<opt->count; i++)
-        vkvg_draw_shape(SHAPE_RECTANGLE, opt, ctx);
+    for (int j=0; j<2; j++) {
+        for (int i=0; i<opt->count/2; i++)
+            vkvg_draw_shape(SHAPE_RECTANGLE, opt, ctx);
+        vkvg_flush(ctx->ctx);
+    }
 }
 
 void vkvg_circles_perform (options_t *opt, library_context_t* ctx) {

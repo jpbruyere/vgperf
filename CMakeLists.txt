@@ -75,21 +75,29 @@ IF (TESTS_VKVG)
 	FIND_PACKAGE(Vulkan REQUIRED)
 	#FIND_PACKAGE(VKVG REQUIRED)
 
-	SET(VKVG_INCLUDE_DIRECTORY "/mnt/devel/gts/vkvg/include" CACHE STRING "VKVG include directory")
-	SET(VKVG_LIBRARY "/mnt/devel/gts/vkvg/build/libvkvg.so" CACHE STRING "VKVG include directory")
+	INCLUDE_DIRECTORIES(
+		"${CMAKE_CURRENT_SOURCE_DIR}/external/vkh/src"
+		"${CMAKE_CURRENT_SOURCE_DIR}/external/vkh/src"
+		"${CMAKE_CURRENT_SOURCE_DIR}/external/vkh/include"
+	)
+
+	add_subdirectory (external/vkvg)
+
 	FILE (GLOB VKVG_SOURCES src/vkvg/*.c)
 
 	LIST (APPEND SOURCES
 		${VKVG_SOURCES}
 	)
+
+
 	LIST(APPEND VGPERF_INCS
-		${VKVG_INCLUDE_DIRECTORY}
-		${Vulkan_INCLUDE_DIRS}
 		${CMAKE_CURRENT_SOURCE_DIR}/external/vkh/src
 		${CMAKE_CURRENT_SOURCE_DIR}/external/vkh/include
+		${CMAKE_CURRENT_SOURCE_DIR}/external/vkvg/include
+		${Vulkan_INCLUDE_DIRS}
 	)
 	LIST(APPEND VGPERF_LIBS
-		${VKVG_LIBRARY}
+		vkvg_static
 		${Vulkan_LIBRARIES}
 		vkh_static
 	)
