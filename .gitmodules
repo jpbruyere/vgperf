@@ -4,3 +4,9 @@
 [submodule "external/skia"]
 	path = external/skia
 	url = https://github.com/jpbruyere/skia.git
+[submodule "external/vkvg"]
+	path = external/vkvg
+	url = https://github.com/jpbruyere/vkvg.git
+[submodule "external/cairo"]
+	path = external/cairo
+	url = git://git.cairographics.org/git/cairo

@@ -24,7 +24,22 @@ library_context_t* vkvg_initLibrary(options_t* opt) {
     ctx->vkEngine = vkengine_create (VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_PRESENT_MODE_MAILBOX_KHR, (uint)opt->width, (uint)opt->height);
     VkhPresenter r = ctx->vkEngine->renderer;
 
-    ctx->dev = vkvg_device_create (vkh_app_get_inst(ctx->vkEngine->app), r->dev->phy, r->dev->dev, r->qFam, 0);
+    switch (opt->antialias) {
+    case ANTIALIAS_DEFAULT:
+    case ANTIALIAS_NONE:
+        ctx->dev = vkvg_device_create (vkh_app_get_inst(ctx->vkEngine->app), r->dev->phy, r->dev->dev, r->qFam, 0);
+        break;
+    case ANTIALIAS_FAST:
+        ctx->dev = vkvg_device_create_multisample (vkh_app_get_inst(ctx->vkEngine->app), r->dev->phy, r->dev->dev, r->qFam, 0, VK_SAMPLE_COUNT_2_BIT, 0);
+        break;
+    case ANTIALIAS_GOOD:
+        ctx->dev = vkvg_device_create_multisample (vkh_app_get_inst(ctx->vkEngine->app), r->dev->phy, r->dev->dev, r->qFam, 0, VK_SAMPLE_COUNT_4_BIT, 0);
+        break;
+    case ANTIALIAS_BEST:
+        ctx->dev = vkvg_device_create_multisample (vkh_app_get_inst(ctx->vkEngine->app), r->dev->phy, r->dev->dev, r->qFam, 0,
+                  vkengine_get_MaxUsableSampleCount(ctx->vkEngine->gpu_props.limits.framebufferColorSampleCounts), 0);
+        break;
+    }
 
     ctx->surf = vkvg_surface_create (ctx->dev, (uint)opt->width, (uint)opt->height);
 
@@ -52,13 +67,16 @@ void vkvg_cleanupLibrary (library_context_t* ctx) {
  * @param library context
  */
 void vkvg_initTest(options_t* opt, library_context_t* ctx) {
-    vkvg_surface_clear(ctx->surf);
+    //vkvg_surface_clear(ctx->surf);
+
     ctx->ctx = vkvg_create(ctx->surf);
+    vkvg_set_source_rgba(ctx->ctx,0,0,0,1);
+    vkvg_paint(ctx->ctx);
 
     //cairo_set_antialias (ctx->ctx, CAIRO_ANTIALIAS_NONE);
     vkvg_set_line_width (ctx->ctx, opt->lineWidth);
 
-    switch (opt->capStyle) {
+    /*switch (opt->capStyle) {
     case LINE_CAP_BUTT:
         vkvg_set_line_cap(ctx->ctx, VKVG_LINE_CAP_BUTT);
         break;
@@ -80,7 +98,7 @@ void vkvg_initTest(options_t* opt, library_context_t* ctx) {
         vkvg_set_line_join(ctx->ctx, VKVG_LINE_JOIN_ROUND);
         break;
     }
-    vkvg_set_fill_rule(ctx->ctx, VKVG_FILL_RULE_EVEN_ODD);
+    vkvg_set_fill_rule(ctx->ctx, VKVG_FILL_RULE_NON_ZERO);*/
 
 }
 /**

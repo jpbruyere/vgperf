@@ -56,8 +56,8 @@ options_t initOptions (int argc, char *argv[]) {
     opt.runSingleTest = -1;//run all tests
     opt.iterations = 100;
     opt.count = 100;
-    opt.width = 1024;
-    opt.height = 800;
+    opt.width = 512;
+    opt.height = 512;
     opt.present = 1;
     opt.lineWidth = 1;
     opt.drawMode = DM_FILL;

@@ -54,6 +54,8 @@ void vkengine_destroy       (VkEngine e);
 bool vkengine_should_close  (VkEngine e);
 void vkengine_close         (VkEngine e);
 void vkengine_dump_Infos    (VkEngine e);
+VkSampleCountFlagBits vkengine_get_MaxUsableSampleCount   (VkSampleCountFlags counts);
+
 VkDevice            vkengine_get_device         (VkEngine e);
 VkPhysicalDevice    vkengine_get_physical_device(VkEngine e);
 VkInstance          vkengine_get_instance       (VkEngine e);
