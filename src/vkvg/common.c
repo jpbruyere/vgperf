@@ -10,7 +10,7 @@ void vkvg_present (options_t* opt, library_context_t* ctx) {
 	VkhPresenter r = ctx->vkEngine->renderer;
 	if (!vkh_presenter_draw (r))
 		vkh_presenter_build_blit_cmd (r, vkvg_surface_get_vk_image(ctx->surf), (uint)opt->width, (uint)opt->height);
-	vkDeviceWaitIdle(r->dev->dev);
+	//vkDeviceWaitIdle(r->dev->dev);
 }
 
 /**
@@ -22,6 +22,7 @@ library_context_t* vkvg_initLibrary(options_t* opt) {
 	library_context_t* ctx = (library_context_t*)calloc(1, sizeof(library_context_t));
 
 	ctx->vkEngine = vkengine_create (VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_PRESENT_MODE_MAILBOX_KHR, (uint)opt->width, (uint)opt->height);
+	vkengine_set_window_title (ctx->vkEngine, "vkvg");
 	VkhPresenter r = ctx->vkEngine->renderer;
 
 	switch (opt->antialias) {
@@ -72,10 +73,11 @@ void vkvg_initTest(options_t* opt, library_context_t* ctx) {
 	ctx->ctx = vkvg_create(ctx->surf);
 	vkvg_clear(ctx->ctx);
 
-	//cairo_set_antialias (ctx->ctx, CAIRO_ANTIALIAS_NONE);
 	vkvg_set_line_width (ctx->ctx, opt->lineWidth);
+	vkvg_set_fill_rule (ctx->ctx, VKVG_FILL_RULE_NON_ZERO);
 
-	/*switch (opt->capStyle) {
+
+	switch (opt->capStyle) {
 	case LINE_CAP_BUTT:
 		vkvg_set_line_cap(ctx->ctx, VKVG_LINE_CAP_BUTT);
 		break;
@@ -97,7 +99,7 @@ void vkvg_initTest(options_t* opt, library_context_t* ctx) {
 		vkvg_set_line_join(ctx->ctx, VKVG_LINE_JOIN_ROUND);
 		break;
 	}
-	vkvg_set_fill_rule(ctx->ctx, VKVG_FILL_RULE_NON_ZERO);*/
+	vkvg_set_fill_rule(ctx->ctx, VKVG_FILL_RULE_NON_ZERO);
 
 }
 /**

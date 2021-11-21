@@ -194,7 +194,9 @@ vk_engine_t* vkengine_create (VkPhysicalDeviceType preferedGPU, VkPresentModeKHR
 
 	return e;
 }
-
+void vkengine_set_window_title (VkEngine e, const char* title) {
+	glfwSetWindowTitle (e->window, title);
+}
 void vkengine_destroy (VkEngine e) {
 	vkDeviceWaitIdle(e->dev->dev);
 

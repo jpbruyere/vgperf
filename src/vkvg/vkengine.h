@@ -54,6 +54,7 @@ void vkengine_destroy       (VkEngine e);
 bool vkengine_should_close  (VkEngine e);
 void vkengine_close         (VkEngine e);
 void vkengine_dump_Infos    (VkEngine e);
+void vkengine_set_window_title (VkEngine e, const char* title);
 
 VkSampleCountFlagBits vkengine_get_MaxUsableSampleCount   (VkSampleCountFlags counts);
 

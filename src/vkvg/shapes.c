@@ -6,7 +6,7 @@ void randomize_color (VkvgContext ctx) {
         (float)rnd()/RAND_MAX,
         (float)rnd()/RAND_MAX,
         (float)rnd()/RAND_MAX,
-        0.2f//0.4f*(float)rnd()/RAND_MAX
+        (float)rnd()/RAND_MAX
     );
     //vkvg_set_source_color (ctx, rnd());
 }
@@ -17,7 +17,7 @@ void vkvg_draw_shape (shape_t shape, options_t *opt, library_context_t* ctx) {
 
     float x, y, z, v, r;
 
-    randomize_color (ctx->ctx);    
+    randomize_color (ctx->ctx);
 
     switch (shape) {
     case SHAPE_LINE:

@@ -133,7 +133,7 @@ typedef struct _test {
  */
 typedef struct _vgperf_context
 {
-	char* libName;
+	const char* libName;
 	LibCtx libCtx;//library context pointer, different for each libs with dedicated objs like device, etc.
 	PFNinitLibrary init;//library init and surface creation
 	PFNcleanupLibrary cleanup;//library cleanup
