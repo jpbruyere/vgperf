@@ -73,6 +73,7 @@ void _print_usage_and_exit () {
 	printf("\t\t\t - l: linear gradient\n");
 	printf("\t\t\t - r: radial gradient\n");
 	printf("\t\t\t - s: surface\n");*/
+	printf ("\t-rs:\t\tComma separated report with only median values.\n");
 	printf ("\t-s:\t\tSave produced images on disk.\n");
 	printf("\t-h:\t\t\tthis help message.\n");
 
@@ -97,6 +98,7 @@ options_t initOptions (int argc, char *argv[]) {
 	opt.fillType = FILL_TYPE_SOLID;
 	opt.shape = SHAPE_LINE;
 	opt.saveImgs = 0;
+	opt.report = 0;
 
 	char antialias, drawMode, lineCaps, lineJoins, fillType, shape;
 	for (int i = 1; i < argc; i++) {
@@ -241,6 +243,9 @@ options_t initOptions (int argc, char *argv[]) {
 				break;
 			case 's':
 				opt.saveImgs = 1;
+				break;
+			case 'r':
+				opt.report = 1;
 				break;
 			case 'h':
 			default:
@@ -514,15 +519,27 @@ int main(int argc, char *argv[]) {
 	for (int i=0; i<libCpt; i++)
 		test_library(&opt, libs[i]);
 
-	outputResultsHeadRow(&opt);
-	for (int t=0; t<TESTS_COUNT; t++){
-		for (int l=0; l<libCpt; l++) {
-			if (t < libs[l]->testCount)
-				outputResultsOnOneLine(libs[l]->libName, libs[l]->tests[t].test_name, &opt, &libs[l]->tests[t].results);
+	if (opt.report) {
+		for (int l=0; l<libCpt; l++)
+			printf(",%s",libs[l]->libName);
+		printf("\n");
+		for (int t=0; t<libs[0]->testCount; t++){
+			printf ("%s", libs[0]->tests[t].test_name);
+			for (int l=0; l<libCpt; l++)
+				printf (",%f", libs[l]->tests[t].results.median_time);
+			printf("\n");
 		}
-	}
-	printf ("--------------------------------------------------------------------------------------------\n\n");
 
+	} else {
+		outputResultsHeadRow(&opt);
+		for (int t=0; t<TESTS_COUNT; t++){
+			for (int l=0; l<libCpt; l++) {
+				if (t < libs[l]->testCount)
+					outputResultsOnOneLine(libs[l]->libName, libs[l]->tests[t].test_name, &opt, &libs[l]->tests[t].results);
+			}
+		}
+		printf ("--------------------------------------------------------------------------------------------\n\n");
+	}
 
 
 	for (uint i=0; i<libCpt; i++){

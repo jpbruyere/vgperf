@@ -89,6 +89,7 @@ typedef struct _options_t {
 	int saveImgs;
 	draw_mode_t drawMode;
 	antialias_t antialias;
+	int report;
 } options_t;
 
 extern int star_points[11][2];

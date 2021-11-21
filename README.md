@@ -1,6 +1,13 @@
 This is a benchmark between [cairo](https://www.cairographics.org/), [skia](https://skia.org/) and [vkvg](https://github.com/jpbruyere/vkvg) on the model of [caskbench](https://gitlab.com/bryceharrington/caskbench.git), but in c.
 To be able to test the vulkan backend of skia, I had to patch the experimental c API of skia, the patched branch is set as submodule.
 
+<p align="center">
+  <a href="https://github.com/jpbruyere/vgperf/blob/master/vgperf.png">
+	<kbd><img src="https://raw.githubusercontent.com/jpbruyere/vgperf/master/vgperf.png" height="300"></kbd>
+  </a>
+   <br>major libs perf comparison</br>
+</p>
+
 To build skia:
 ```
 git submodule update --init --recursive
