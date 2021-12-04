@@ -10,6 +10,7 @@ typedef struct _library_context {
 
     VkvgDevice dev;
     VkvgSurface surf;
+	VkvgSurface imgSurf;
     VkvgContext ctx;
 } library_context_t;
 

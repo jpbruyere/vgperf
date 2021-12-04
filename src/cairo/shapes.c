@@ -3,10 +3,10 @@
 
 void ca_randomize_color (cairo_t *ctx) {
     cairo_set_source_rgba(ctx,
-        (double)rnd()/RAND_MAX,
-        (double)rnd()/RAND_MAX,
-        (double)rnd()/RAND_MAX,
-        (double)rnd()/RAND_MAX
+		drnd48(),
+		drnd48(),
+		drnd48(),
+		drnd48()
     );
 }
 
@@ -16,35 +16,47 @@ void ca_draw_shape (shape_t shape, options_t *opt, library_context_t* ctx) {
 
     double x, y, z, v;
 
-    ca_randomize_color (ctx->ctx);
+	switch (opt->fillType) {
+	case FILL_TYPE_SOLID:
+		ca_randomize_color (ctx->ctx);
+		break;
+	case FILL_TYPE_SURFACE:
+		cairo_set_source_surface(ctx->ctx, ctx->imgSurf, 0, 0);
+		break;;
+	case FILL_TYPE_LINEAR:
+	case FILL_TYPE_RADIAL:
+		ca_randomize_color (ctx->ctx);
+		break;;
+	}
+
 
     switch (shape) {
     case SHAPE_LINE:
-        x = (double)rnd()/RAND_MAX * w;
-        y = (double)rnd()/RAND_MAX * h;
-        z = (double)rnd()/RAND_MAX * w;
-        v = (double)rnd()/RAND_MAX * h;
+		x = drnd48() * w;
+		y = drnd48() * h;
+		z = drnd48() * w;
+		v = drnd48() * h;
 
         cairo_move_to(ctx->ctx, x, y);
         cairo_line_to(ctx->ctx, z, v);
         cairo_stroke(ctx->ctx);
         break;
     case SHAPE_RECTANGLE:
-        x = trunc( (0.5*(double)opt->width*rnd())/RAND_MAX );
-        y = trunc( (0.5*(double)opt->height*rnd())/RAND_MAX );
-        z = trunc( (0.5*(double)opt->width*rnd())/RAND_MAX ) + 1;
-        v = trunc( (0.5*(double)opt->height*rnd())/RAND_MAX ) + 1;
+		x = drnd48() * w;
+		y = drnd48() * h;
+		z = 0.5 * drnd48() * w + 1;
+		v = 0.5 * drnd48() * h + 1;
 
-        cairo_rectangle(ctx->ctx, x+1, y+1, z, v);
+		cairo_rectangle(ctx->ctx, x+1, y+1, z, v);
 
         ca_draw(opt->drawMode, ctx->ctx);
         break;
     case SHAPE_ROUNDED_RECTANGLE:
         break;
     case SHAPE_CIRCLE:
-        x = (double)rnd()/RAND_MAX * w;
-        y = (double)rnd()/RAND_MAX * h;
-        v = (double)rnd()/RAND_MAX * MIN(w,h) / 2.0;
+		x = drnd48() * w;
+		y = drnd48() * h;
+		v = drnd48() * MIN(w,h) * 0.2;
 
         cairo_arc(ctx->ctx, x, y, v, 0, M_PI * 2.0);
 
@@ -53,9 +65,9 @@ void ca_draw_shape (shape_t shape, options_t *opt, library_context_t* ctx) {
     case SHAPE_TRIANGLE:
         break;
     case SHAPE_STAR:
-        x = (double)rnd()/RAND_MAX * w;
-        y = (double)rnd()/RAND_MAX * h;
-        z = (float)rnd()/RAND_MAX *0.5 + 0.15; //scale
+		x = drnd48() * w;
+		y = drnd48() * h;
+		z = drnd48() *0.5 + 0.15; //scale
 
         cairo_move_to (ctx->ctx, x+star_points[0][0]*z, y+star_points[0][1]*z);
         for (int s=1; s<11; s++)

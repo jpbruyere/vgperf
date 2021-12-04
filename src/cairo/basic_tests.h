@@ -31,15 +31,15 @@ void ca_single_poly_perform (options_t *opt, library_context_t* ctx)
     int w = opt->width;
     int h = opt->height;
 
-    double x = (double)rnd()/RAND_MAX * w;
-    double y = (double)rnd()/RAND_MAX * h;
+	double x = drnd48() * w;
+	double y = drnd48() * h;
 
     ca_randomize_color (ctx->ctx);
     cairo_move_to(ctx->ctx, x, y);
 
     for (int i=0; i<opt->count; i++) {
-        x = (double)rnd()/RAND_MAX * w;
-        y = (double)rnd()/RAND_MAX * h;
+		x = drnd48() * w;
+		y = drnd48() * h;
 
         cairo_line_to(ctx->ctx, x, y);
     }

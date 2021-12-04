@@ -4,12 +4,9 @@
 
 void skia_present (options_t* opt, library_context_t* ctx) {
 	gr_context_flush(ctx->gr);
-	vkengine_wait_device_idle(ctx->vke);
 	VkhPresenter r = ctx->vke->renderer;
 	if (!vkh_presenter_draw (r))
 		vkh_presenter_build_blit_cmd (r, gr_vk_image_info_get_image(ctx->vkImgInfo), (uint)opt->width, (uint)opt->height);
-
-	vkengine_wait_device_idle(ctx->vke);
 }
 
 library_context_t* skia_initLibrary(options_t* opt) {

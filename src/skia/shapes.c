@@ -3,10 +3,10 @@
 
 void skia_randomize_color (sk_paint_t *paint) {
 	sk_paint_set_color(paint, rnd());
-	uint32_t c = sk_paint_get_color (paint);
+	/*uint32_t c = sk_paint_get_color (paint);
 	c &= 0x00ffffff;
 	c += (uint32_t)(255 * 0.2f) << 24;
-	sk_paint_set_color(paint, c);
+	sk_paint_set_color(paint, c);*/
 }
 
 void skia_draw_shape (shape_t shape, options_t *opt, library_context_t* ctx) {
@@ -19,10 +19,10 @@ void skia_draw_shape (shape_t shape, options_t *opt, library_context_t* ctx) {
 
 	switch (shape) {
 	case SHAPE_LINE:
-		x = (float)rnd()/(float)RAND_MAX * w;
-		y = (float)rnd()/(float)RAND_MAX * h;
-		z = (float)rnd()/(float)RAND_MAX * w;
-		v = (float)rnd()/(float)RAND_MAX * h;
+		x = frnd48() * w;
+		y = frnd48() * h;
+		z = frnd48() * w;
+		v = frnd48() * h;
 
 		sk_paint_set_stroke(ctx->paint, true);
 
@@ -38,16 +38,16 @@ void skia_draw_shape (shape_t shape, options_t *opt, library_context_t* ctx) {
 
 		break;
 	case SHAPE_RECTANGLE:
-		x = truncf( (0.5*(float)opt->width*rnd())/(float)RAND_MAX );
-		y = truncf( (0.5*(float)opt->height*rnd())/(float)RAND_MAX );
-		w = truncf( (0.5*(float)opt->width*rnd())/(float)RAND_MAX ) + 1;
-		h = truncf( (0.5*(float)opt->height*rnd())/(float)RAND_MAX ) + 1;
+		x = 0.2f * frnd48() * w;
+		y = 0.2f * frnd48() * h;
+		z = 0.5f * frnd48() * w + 1;
+		v = 0.5f * frnd48() * h + 1;
 
 		sk_rect_t rect;
 		rect.left = x;
 		rect.top = y;
-		rect.right = x+w;
-		rect.bottom = y+h;
+		rect.right = x+z;
+		rect.bottom = y+v;
 
 		switch (opt->drawMode) {
 		case DM_FILL:
@@ -68,9 +68,9 @@ void skia_draw_shape (shape_t shape, options_t *opt, library_context_t* ctx) {
 
 		break;
 	case SHAPE_CIRCLE:
-		x = (float)rnd()/(float)RAND_MAX * w;
-		y = (float)rnd()/(float)RAND_MAX * h;
-		v = (float)rnd()/(float)RAND_MAX * MIN(w,h) * 0.5f;
+		x = frnd48() * w;
+		y = frnd48() * h;
+		v = frnd48() * MIN(w,h) * 0.2f;
 
 		switch (opt->drawMode) {
 		case DM_STROKE:
@@ -87,9 +87,9 @@ void skia_draw_shape (shape_t shape, options_t *opt, library_context_t* ctx) {
 	case SHAPE_TRIANGLE:
 		break;
 	case SHAPE_STAR:
-		x = (float)rnd()/(float)RAND_MAX * w;
-		y = (float)rnd()/(float)RAND_MAX * h;
-		z = (float)rnd()/(float)RAND_MAX *0.5 + 0.15; //scale
+		x = frnd48() * w;
+		y = frnd48() * h;
+		z = frnd48() * 0.5 + 0.15; //scale
 
 		sk_pathbuilder_t* star = sk_pathbuilder_new();
 		sk_pathbuilder_move_to(star, x+star_points[0][0]*z, y+star_points[0][1]*z);

@@ -44,6 +44,9 @@ library_context_t* vkvg_initLibrary(options_t* opt) {
 
 	ctx->surf = vkvg_surface_create (ctx->dev, (uint)opt->width, (uint)opt->height);
 
+	if (opt->fillType == FILL_TYPE_SURFACE)
+		ctx->imgSurf = vkvg_surface_create_from_image(ctx->dev, "../images/etna.png");
+
 	if (opt->present == 1)
 		vkh_presenter_build_blit_cmd (r, vkvg_surface_get_vk_image(ctx->surf), (uint)opt->width, (uint)opt->height);
 
@@ -54,6 +57,9 @@ library_context_t* vkvg_initLibrary(options_t* opt) {
  * @param library test context
  */
 void vkvg_cleanupLibrary (library_context_t* ctx) {
+	if (ctx->imgSurf)
+		vkvg_surface_destroy (ctx->imgSurf);
+
 	vkvg_surface_destroy(ctx->surf);
 
 	vkvg_device_destroy (ctx->dev);

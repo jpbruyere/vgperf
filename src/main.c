@@ -68,11 +68,11 @@ void _print_usage_and_exit () {
 	printf("\t\t\t - m: mitter (default)\n");
 	printf("\t\t\t - b: bevel\n");
 	printf("\t\t\t - r: round\n");
-	/*printf ("\t-f [c|l|r|s]:\tSet fill type.\n");
+	printf ("\t-f [c|l|r|s]:\tSet fill type.\n");
 	printf("\t\t\t - c: solid color (default)\n");
 	printf("\t\t\t - l: linear gradient\n");
 	printf("\t\t\t - r: radial gradient\n");
-	printf("\t\t\t - s: surface\n");*/
+	printf("\t\t\t - s: surface\n");
 	printf ("\t-rs:\t\tComma separated report with only median values.\n");
 	printf ("\t-s:\t\tSave produced images on disk.\n");
 	printf("\t-h:\t\t\tthis help message.\n");
@@ -449,6 +449,8 @@ void run_single_test (options_t* opt, vgperf_context_t* ctx, test_t* test) {
 
 	for (int i=0; i<opt->iterations; i++) {
 
+		reset_rnd();
+
 		if (test->init)
 			test->init (opt, ctx->libCtx);
 
@@ -486,7 +488,7 @@ void test_library (options_t* opt, vgperf_context_t* ctx) {
 	ctx->libCtx = ctx->init (opt);
 
 	/* Reinitialize random seed to a known state */
-	srnd();
+	reset_rnd();
 
 	if (opt->runSingleTest < 0) {
 		for (int t=0; t<ctx->testCount; t++)

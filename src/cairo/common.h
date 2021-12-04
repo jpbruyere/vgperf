@@ -29,7 +29,9 @@
 
 typedef struct _library_context {
     cairo_surface_t* surf;
+	cairo_surface_t* imgSurf;
     cairo_t* ctx;
+	int groupd_draw;
 } library_context_t;
 
 void ca_present (options_t *opt, library_context_t* ctx);

@@ -24,7 +24,7 @@ static xcb_visualtype_t *find_visual(xcb_connection_t *c, xcb_visualid_t visual)
 
 library_context_t* ca_xcb_initLibrary(options_t* opt) {
 	library_context_t* ctx = (library_context_t*)calloc(1, sizeof(library_context_t));
-
+	ctx->groupd_draw = 0;
 	xcb_connection_t *c;
 	xcb_screen_t *screen;
 	xcb_window_t window;
@@ -37,12 +37,22 @@ library_context_t* ca_xcb_initLibrary(options_t* opt) {
 	screen = xcb_setup_roots_iterator(xcb_get_setup(c)).data;
 	window = xcb_generate_id(c);
 	xcb_create_window(c, XCB_COPY_FROM_PARENT, window, screen->root,
-			20, 20, opt->width, opt->height, 0,
+			0, 0, opt->width, opt->height, 0,
 			XCB_WINDOW_CLASS_INPUT_OUTPUT,
 			screen->root_visual,
-			XCB_CW_OVERRIDE_REDIRECT | XCB_CW_EVENT_MASK,
-			mask);
+			0,//XCB_CW_EVENT_MASK,
+			NULL);//mask);
+	char *title = "Cairo XCB";
+			xcb_change_property (c,
+								 XCB_PROP_MODE_REPLACE,
+								 window,
+								 XCB_ATOM_WM_NAME,
+								 XCB_ATOM_STRING,
+								 8,
+								 strlen (title),
+								 title );
 	xcb_map_window(c, window);
+	xcb_flush (c);
 
 	visual = find_visual(c, screen->root_visual);
 
@@ -56,12 +66,16 @@ void ca_xcb_cleanupLibrary (library_context_t* ctx) {
 	xcb_disconnect (c);
 	free(ctx);
 }
-void ca_xcb_cleanupTest (options_t* opt, library_context_t* ctx) {
+/*void ca_xcb_cleanupTest (options_t* opt, library_context_t* ctx) {
 	cairo_destroy(ctx->ctx);
 	cairo_surface_flush (ctx->surf);
-}
+}*/
 void ca_xcb_present (options_t* opt, library_context_t* ctx) {
-	xcb_flush (cairo_xcb_device_get_connection(cairo_surface_get_device(ctx->surf)));
+	xcb_connection_t *c = cairo_xcb_device_get_connection(cairo_surface_get_device(ctx->surf));
+	/*cairo_pop_group_to_source (ctx->ctx);
+	cairo_paint (ctx->ctx);*/
+	cairo_surface_flush (ctx->surf);
+	xcb_flush(c);
 }
 
 #endif
@@ -69,7 +83,7 @@ void ca_xcb_present (options_t* opt, library_context_t* ctx) {
 #if defined(CAIRO_HAS_XLIB_SURFACE) & defined(WITH_CAIRO_XLIB)
 library_context_t* ca_xlib_initLibrary(options_t* opt) {
 	library_context_t* ctx = (library_context_t*)calloc(1, sizeof(library_context_t));
-
+	ctx->groupd_draw = 1;
 	Display *dsp;
 	Drawable da;
 	int screen;
@@ -78,7 +92,8 @@ library_context_t* ca_xlib_initLibrary(options_t* opt) {
 	   exit(1);
 	screen = DefaultScreen(dsp);
 	da = XCreateSimpleWindow(dsp, DefaultRootWindow(dsp), 0, 0, opt->width, opt->height, 0, 0, 0);
-	XSelectInput(dsp, da, ExposureMask);
+	//XSelectInput(dsp, da, ExposureMask);
+	XStoreName(dsp,da,"Cairo XLib\0");
 	XMapWindow(dsp, da);
 
 	ctx->surf = cairo_xlib_surface_create(dsp, da, XDefaultVisual(dsp, screen), opt->width, opt->height);
@@ -95,13 +110,15 @@ void ca_xlib_cleanupLibrary (library_context_t* ctx) {
 	XCloseDisplay(dsp);
 	free(ctx);
 }
-void ca_xlib_cleanupTest (options_t* opt, library_context_t* ctx) {
+/*void ca_xlib_cleanupTest (options_t* opt, library_context_t* ctx) {
 	cairo_destroy(ctx->ctx);
 	cairo_surface_flush (ctx->surf);
-}
+}*/
 void ca_xlib_present (options_t* opt, library_context_t* ctx) {
+	cairo_pop_group_to_source (ctx->ctx);
+	cairo_paint (ctx->ctx);
+	cairo_surface_flush (ctx->surf);
 	XSync(cairo_xlib_surface_get_display(ctx->surf), 1);
-	//cairo_surface_flush (ctx->surf);
 }
 #endif
 
@@ -113,7 +130,7 @@ static void error_callback(int error, const char* description)
 }
 library_context_t* ca_gles_initLibrary(options_t* opt) {
 	library_context_t* ctx = (library_context_t*)calloc(1, sizeof(library_context_t));
-
+	ctx->groupd_draw = 0;
 	glfwSetErrorCallback(error_callback);
 
 	if (!glfwInit())
@@ -137,8 +154,7 @@ library_context_t* ca_gles_initLibrary(options_t* opt) {
 	EGLContext eglctx = glfwGetEGLContext(window);
 
 	glfwMakeContextCurrent(window);
-	glfwSwapInterval(1);
-
+	glfwSwapInterval(0);
 
 	cairo_device_t* cairo_device = cairo_egl_device_create (display, eglctx);
 	cairo_status_t status = cairo_device_status (cairo_device);
@@ -149,14 +165,16 @@ library_context_t* ca_gles_initLibrary(options_t* opt) {
 	ctx->surf = cairo_gl_surface_create_for_egl (cairo_device,
 													 glfwGetEGLSurface(window),
 													 opt->width, opt->height);
-	cairo_surface_t* s2 = cairo_surface_create_similar(ctx->surf, CAIRO_CONTENT_COLOR, 800,600);
+	/*cairo_surface_t* s2 = cairo_surface_create_similar(ctx->surf, CAIRO_CONTENT_COLOR, 800,600);
 	cairo_t* c = cairo_create(s2);
 
 	cairo_set_source_rgb(c, 1.0,0.0,0.0);
 	cairo_paint(c);
 
 	cairo_destroy(c);
-	cairo_surface_destroy(s2);
+	cairo_surface_destroy(s2);*/
+	if (opt->fillType == FILL_TYPE_SURFACE)
+		ctx->imgSurf = cairo_image_surface_create_from_png("../images/etna.png");
 
 	cairo_device_destroy (cairo_device);
 
@@ -173,10 +191,10 @@ void ca_gles_cleanupLibrary (library_context_t* ctx) {
 	glfwTerminate();
 	free(ctx);
 }
-void ca_gles_cleanupTest (options_t* opt, library_context_t* ctx) {
+/*void ca_gles_cleanupTest (options_t* opt, library_context_t* ctx) {
 	cairo_destroy(ctx->ctx);
 	cairo_surface_flush (ctx->surf);
-}
+}*/
 void ca_gles_present (options_t* opt, library_context_t* ctx) {
 	cairo_gl_surface_swapbuffers (ctx->surf);
 }
@@ -192,6 +210,7 @@ library_context_t* ca_image_initLibrary(options_t* opt) {
 	library_context_t* ctx = (library_context_t*)calloc(1, sizeof(library_context_t));
 
 	ctx->surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, opt->width, opt->height);
+	ctx->groupd_draw = 0;
 
 	return ctx;
 }
@@ -260,6 +279,8 @@ void ca_initTest(options_t* opt, library_context_t* ctx) {
 	cairo_set_operator(ctx->ctx, CAIRO_OPERATOR_OVER);
 
 	cairo_set_line_width (ctx->ctx, opt->lineWidth);
+	if (ctx->groupd_draw)
+		cairo_push_group(ctx->ctx);
 }
 void ca_cleanupTest (options_t* opt, library_context_t* ctx) {
 	cairo_destroy(ctx->ctx);
