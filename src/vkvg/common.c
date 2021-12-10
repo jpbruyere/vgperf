@@ -28,16 +28,16 @@ library_context_t* vkvg_initLibrary(options_t* opt) {
 	switch (opt->antialias) {
 	case ANTIALIAS_DEFAULT:
 	case ANTIALIAS_NONE:
-		ctx->dev = vkvg_device_create (vkh_app_get_inst(ctx->vkEngine->app), r->dev->phy, r->dev->dev, r->qFam, 0);
+		ctx->dev = vkvg_device_create_from_vk (vkh_app_get_inst(ctx->vkEngine->app), r->dev->phy, r->dev->dev, r->qFam, 0);
 		break;
 	case ANTIALIAS_FAST:
-		ctx->dev = vkvg_device_create_multisample (vkh_app_get_inst(ctx->vkEngine->app), r->dev->phy, r->dev->dev, r->qFam, 0, VK_SAMPLE_COUNT_2_BIT, 0);
+		ctx->dev = vkvg_device_create_from_vk_multisample (vkh_app_get_inst(ctx->vkEngine->app), r->dev->phy, r->dev->dev, r->qFam, 0, VK_SAMPLE_COUNT_2_BIT, 0);
 		break;
 	case ANTIALIAS_GOOD:
-		ctx->dev = vkvg_device_create_multisample (vkh_app_get_inst(ctx->vkEngine->app), r->dev->phy, r->dev->dev, r->qFam, 0, VK_SAMPLE_COUNT_4_BIT, 0);
+		ctx->dev = vkvg_device_create_from_vk_multisample (vkh_app_get_inst(ctx->vkEngine->app), r->dev->phy, r->dev->dev, r->qFam, 0, VK_SAMPLE_COUNT_4_BIT, 0);
 		break;
 	case ANTIALIAS_BEST:
-		ctx->dev = vkvg_device_create_multisample (vkh_app_get_inst(ctx->vkEngine->app), r->dev->phy, r->dev->dev, r->qFam, 0,
+		ctx->dev = vkvg_device_create_from_vk_multisample (vkh_app_get_inst(ctx->vkEngine->app), r->dev->phy, r->dev->dev, r->qFam, 0,
 				  vkengine_get_MaxUsableSampleCount(ctx->vkEngine->gpu_props.limits.framebufferColorSampleCounts), 0);
 		break;
 	}
