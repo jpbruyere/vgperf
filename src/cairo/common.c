@@ -140,6 +140,22 @@ library_context_t* ca_gles_initLibrary(options_t* opt) {
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API) ;
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3 );
 	glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_EGL_CONTEXT_API);
+	switch (opt->antialias) {
+	case ANTIALIAS_DEFAULT:
+	case ANTIALIAS_NONE:
+		glfwWindowHint(GLFW_SAMPLES, 0);
+		break;
+	case ANTIALIAS_FAST:
+		glfwWindowHint(GLFW_SAMPLES, 2);
+		break;
+	case ANTIALIAS_GOOD:
+		glfwWindowHint(GLFW_SAMPLES, 4);
+		break;
+	case ANTIALIAS_BEST:
+		glfwWindowHint(GLFW_SAMPLES, 8);
+		break;
+	}
+
 
 	window = glfwCreateWindow(opt->width, opt->height, "cairo gles", NULL, NULL);
 
