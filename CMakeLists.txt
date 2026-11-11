@@ -1,226 +1,195 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 3.9)
+cmake_minimum_required(VERSION 3.23)
 
-PROJECT(vgperf VERSION 0.1.0 DESCRIPTION "Vector Graphic Libraries performance tests")
-
-INCLUDE(CheckSymbolExists)
-INCLUDE(CheckIncludeFile)
-INCLUDE(GNUInstallDirs)
-
-SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-SET(CMAKE_CXX_FLAGS "-W -Wall")
-SET(CMAKE_EXE_LINKER_FLAGS "-lm")
-
-IF(NOT CMAKE_BUILD_TYPE)
-  SET(CMAKE_BUILD_TYPE Debug)
-ENDIF()
-MESSAGE(STATUS "${CMAKE_BUILD_TYPE} build.")
-
-IF (CMAKE_BUILD_TYPE STREQUAL "Debug")
-	ADD_DEFINITIONS (-DDEBUG)
-ENDIF()
-
-OPTION(TESTS_VKVG "build vkvg tests" ON)
-OPTION(TESTS_CAIRO "build cairo tests" ON)
-OPTION(TESTS_SKIA "build skia tests" ON)
-
-FILE(GLOB SOURCES src/*.c)
-
-SET(VGPERF_LIBS "")
-SET(VGPERF_INCS "")
-
-LIST(APPEND VGPERF_INCS
-	${CMAKE_CURRENT_SOURCE_DIR}/src
+project(vgperf
+    VERSION 0.2.0
+    DESCRIPTION "2D Vector Graphics Benchmark"
+    LANGUAGES C CXX
 )
 
-FIND_PACKAGE(GLFW3)
-FIND_PACKAGE(Skia)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-IF (!Skia_FOUND)
-	set (TESTS_SKIA OFF)
-ENDIF()
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-IF(GLFW3_FOUND)
-	LIST(APPEND VGPERF_LIBS
-		${GLFW3_LIBRARY}
-	)
-	ADD_DEFINITIONS (-DWITH_GLFW3)
-ENDIF()
+OPTION(ENABLE_VKVG "Enable vkvg." ON)
+OPTION(ENABLE_CAIRO "Enable cairo." ON)
 
-IF (TESTS_SKIA)
-	FILE (GLOB SKIA_SOURCES src/skia/*.c)
-	LIST (APPEND SOURCES
-		${SKIA_SOURCES}
-	)
-	LIST(APPEND VGPERF_INCS
-		${SKIA_INCLUDE_DIRS}
-	)
-	LIST(APPEND VGPERF_LIBS
-		${SKIA_LIBRARIES}
-	)
-	ADD_DEFINITIONS (-DWITH_SKIA)
-ENDIF (TESTS_SKIA)
+set(VGPERF_DATA_ROOT "${CMAKE_SOURCE_DIR}/data" CACHE STRING "Data path for tests")
 
-IF (TESTS_VKVG)
-	SET(VKVG_INCLUDE_DIRECTORY "/usr/include/" CACHE STRING "VKVG include directory")
-	SET(VKVG_LIBRARY "/usr/lib/x86_64-linux-gnu/libvkvg.so" CACHE STRING "VKVG library")
-
-	set(VULKAN_SDK "$ENV{VULKAN_SDK}" CACHE STRING "LunarG Vulkan SDK path")
-	if (VULKAN_SDK)
-			set(ENV{VULKAN_SDK} ${VULKAN_SDK})
-			SET(ENV{VK_LAYER_PATH} "${VULKAN_SDK}/etc/explicit_layer.d")
-	endif ()
-
-	MESSAGE(STATUS "VULKAN_SDK = $ENV{VULKAN_SDK}")
-	MESSAGE(STATUS "VK_LAYER_PATH = $ENV{VK_LAYER_PATH}")
-
-
-	IF (ENABLE_VALIDATION)
-		ADD_DEFINITIONS (-DUSE_VALIDATION)
-	ENDIF ()
-
-	#be aware that system libraries have priority on SDK in the finding.
-	FIND_PACKAGE(Vulkan REQUIRED)
-	#FIND_PACKAGE(VKVG REQUIRED)
-
-	IF (NOT TARGET vkh_static)
-	    ADD_SUBDIRECTORY (external/vkh)
-	ENDIF()
-
-	INCLUDE_DIRECTORIES(
-		"${CMAKE_CURRENT_SOURCE_DIR}/external/vkh/src"
-		"${CMAKE_CURRENT_SOURCE_DIR}/external/vkh/src"
-		"${CMAKE_CURRENT_SOURCE_DIR}/external/vkh/include"
-	)
-
-	FILE (GLOB VKVG_SOURCES src/vkvg/*.c)
-
-	LIST (APPEND SOURCES
-		${VKVG_SOURCES}
-	)
-
-
-	LIST(APPEND VGPERF_INCS
-		${CMAKE_CURRENT_SOURCE_DIR}/external/vkh/src
-		${CMAKE_CURRENT_SOURCE_DIR}/external/vkh/include
-		${CMAKE_CURRENT_SOURCE_DIR}/external/vkvg/include
-		${Vulkan_INCLUDE_DIRS}
-		${VKVG_INCLUDE_DIRECTORY}
-	)
-	LIST(APPEND VGPERF_LIBS
-		vkh_shared
-		${Vulkan_LIBRARIES}
-		${VKVG_LIBRARY}
-	)
-
-	ADD_DEFINITIONS (-DWITH_VKVG)
-
-	MESSAGE(STATUS "VKVG include directory: ${VKVG_INCLUDE_DIRECTORY}")
-	MESSAGE(STATUS "VKVG library:           ${VKVG_LIBRARY}")
-ENDIF ()
-
-if (TESTS_CAIRO)
-	SET(CAIRO_INCLUDE_DIRECTORY "/usr/include/cairo" CACHE STRING "CAIRO include directory")
-	SET(CAIRO_LIBRARY "/usr/lib/x86_64-linux-gnu/libcairo.so" CACHE STRING "CAIRO library")
-	FILE (GLOB CAIRO_SOURCES src/cairo/*.c)
-
-	LIST (APPEND SOURCES
-		${CAIRO_SOURCES}
-	)
-	LIST(APPEND VGPERF_INCS
-		${CAIRO_INCLUDE_DIRECTORY}
-	)
-	LIST(APPEND VGPERF_LIBS
-		${CAIRO_LIBRARY}
-		m
-	)
-
-	ADD_DEFINITIONS (-DWITH_CAIRO)
-
-	MESSAGE(STATUS "CAIRO include directory: ${CAIRO_INCLUDE_DIRECTORY}")
-	MESSAGE(STATUS "CAIRO library:           ${CAIRO_LIBRARY}")
-
-	OPTION(TESTS_CAIRO_IMAGE "build cairo image surface tests" ON)
-	IF (TESTS_CAIRO_IMAGE)
-		ADD_DEFINITIONS (-DWITH_CAIRO_IMAGE)
-	ENDIF ()
-
-	CHECK_INCLUDE_FILE("${CAIRO_INCLUDE_DIRECTORY}/cairo-gl.h" HAVE_CAIRO_GL_H)
-	MESSAGE(STATUS "cairo-gl     = ${HAVE_CAIRO_GL_H}")
-
-	CHECK_INCLUDE_FILE("${CAIRO_INCLUDE_DIRECTORY}/cairo-xlib.h" HAVE_CAIRO_XLIB_H)
-	MESSAGE(STATUS "cairo-xlib   = ${HAVE_CAIRO_XLIB_H}")
-
-	FIND_PACKAGE (X11)
-	IF (X11_FOUND AND HAVE_CAIRO_XLIB_H)
-		OPTION(TESTS_CAIRO_XLIB "build cairo XLIB tests" ON)
-		IF (TESTS_CAIRO_XLIB)
-			LIST(APPEND VGPERF_INCS
-				${X11_INCLUDE_DIRS}
-			)
-			LIST(APPEND VGPERF_LIBS
-				${X11_LIBRARIES}
-			)
-			ADD_DEFINITIONS (-DWITH_CAIRO_XLIB)
-		ENDIF ()
-	ENDIF ()
-
-	CHECK_SYMBOL_EXISTS (CAIRO_HAS_XCB_SURFACE "${CAIRO_INCLUDE_DIRECTORY}/cairo.h" CAIRO_HAS_XCB)
-	FIND_PACKAGE (XCB)
-	IF (XCB_FOUND AND CAIRO_HAS_XCB AND X11_FOUND)
-		OPTION(TESTS_CAIRO_XCB "build cairo XCB tests" ON)
-		IF (TESTS_CAIRO_XCB)
-			LIST(APPEND VGPERF_INCS
-				${X11_INCLUDE_DIRS}
-				${XCB_INCLUDE_DIRS}
-			)
-			LIST(APPEND VGPERF_LIBS
-				${X11_LIBRARIES}
-				${XCB_LIBRARIES}
-			)
-			ADD_DEFINITIONS (-DWITH_CAIRO_XCB)
-		ENDIF ()
-	ENDIF ()
-
-	CHECK_SYMBOL_EXISTS (CAIRO_HAS_GL_SURFACE "${CAIRO_INCLUDE_DIRECTORY}/cairo-gl.h" CAIRO_HAS_GL)
-	MESSAGE(STATUS "CAIRO_HAS_GL   = ${CAIRO_HAS_GL}")
-	FIND_PACKAGE (OpenGL)
-	IF (OPENGL_FOUND AND CAIRO_HAS_GL)
-		OPTION(TESTS_CAIRO_GLX "build cairo GLX tests" ON)
-		IF (TESTS_CAIRO_GLX)
-			LIST(APPEND VGPERF_INCS
-				${OpenGL_INCLUDE_DIRS}
-			)
-			LIST(APPEND VGPERF_LIBS
-				${OpenGL_LIBRARY_DIRS}
-			)
-			ADD_DEFINITIONS (-DWITH_CAIRO_GLX)
-		ENDIF ()
-	ENDIF ()
-
-	FIND_PACKAGE (OpenGLES2)
-	IF (OPENGLES2_FOUND)
-		OPTION(TESTS_CAIRO_GLES "build cairo OpenGL ES 2 tests" ON)
-		IF (TESTS_CAIRO_GLES)
-			LIST(APPEND VGPERF_INCS
-				${OPENGLES2_INCLUDE_DIRS}
-				${OPENGL_EGL_INCLUDE_DIRS}
-			)
-			LIST(APPEND VGPERF_LIBS
-				${OPENGLES2_LIBRARIES}
-				${OPENGL_egl_LIBRARY}
-			)
-			ADD_DEFINITIONS (-DWITH_CAIRO_GLES)
-		ENDIF ()
-	ENDIF ()
+# Build type defaults
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Build type" FORCE)
+    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "RelWithDebInfo" "MinSizeRel")
 endif()
 
+if(MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
 
+include(FetchContent)
 
+FetchContent_Declare(
+  argparse
+  GIT_REPOSITORY https://github.com/p-ranav/argparse
+  GIT_TAG        3eda91b2e1ce7d569f84ba295507c4cd8fd96910 #v3.2
+)
 
-ADD_EXECUTABLE(${PROJECT_NAME} ${SOURCES})
+FetchContent_MakeAvailable(argparse)
 
-MESSAGE(STATUS "INCLUDES   = ${VGPERF_INCS}")
+FetchContent_Declare(
+    nlohmann_json
+    GIT_REPOSITORY https://github.com/nlohmann/json.git
+    GIT_TAG        "v3.11.3"
+)
+FetchContent_MakeAvailable(nlohmann_json)
 
-TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE ${VGPERF_INCS})
-TARGET_LINK_LIBRARIES(${PROJECT_NAME} ${VGPERF_LIBS})
+if(ENABLE_PLUTOVG)
+    FetchContent_Declare(
+        plutovg
+        GIT_REPOSITORY https://github.com/sammycage/plutovg.git
+        GIT_TAG        "v1.3.2"
+    )
+    FetchContent_MakeAvailable(plutovg)
+endif()
 
+if(ENABLE_VKVG)
+    FetchContent_Declare(
+        vkvg
+        GIT_REPOSITORY https://github.com/jpbruyere/vkvg.git
+        GIT_TAG        "e76c8dead9d8334214713d156f85632165f65930"
+    )
+    SET(VKVG_BUILD_TESTS OFF)
+    SET(ENABLE_GTESTS OFF)
+    FetchContent_MakeAvailable(vkvg)
+endif()
+
+if(ENABLE_CAIRO)
+    # 1. Try PkgConfig (standard on Linux/macOS)
+    find_package(PkgConfig QUIET)
+    if(PkgConfig_FOUND)
+        pkg_check_modules(CAIRO IMPORTED_TARGET cairo>=1.16.0)
+    endif()
+
+    # 2. If not found, try CMake Config (vcpkg on Windows)
+    if(NOT CAIRO_FOUND)
+        find_package(cairo CONFIG QUIET)
+        if(cairo_FOUND)
+            if(TARGET cairo::cairo)
+                # Alias to PkgConfig::CAIRO so the rest of the build works transparently
+                if(NOT TARGET PkgConfig::CAIRO)
+                    add_library(PkgConfig::CAIRO ALIAS cairo::cairo)
+                endif()
+                set(CAIRO_FOUND TRUE)
+            endif()
+        endif()
+    endif()
+
+    # 3. If still not found, try Local Deps (Preshing binaries)
+    if(NOT CAIRO_FOUND)
+        set(LOCAL_CAIRO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/deps/cairo/cairo-windows-1.17.2")
+        if(EXISTS "${LOCAL_CAIRO_ROOT}/include/cairo.h")
+            message(STATUS "Found local Cairo at: ${LOCAL_CAIRO_ROOT}")
+            
+            # Create imported target
+            if(NOT TARGET cairo::cairo)
+                add_library(cairo::cairo SHARED IMPORTED)
+                
+                if(MSVC)
+                    set_target_properties(cairo::cairo PROPERTIES
+                        IMPORTED_IMPLIB "${LOCAL_CAIRO_ROOT}/lib/x64/cairo.lib"
+                        IMPORTED_LOCATION "${LOCAL_CAIRO_ROOT}/lib/x64/cairo.dll"
+                        INTERFACE_INCLUDE_DIRECTORIES "${LOCAL_CAIRO_ROOT}/include"
+                    )
+                else()
+                    # Assume x64 for now, adapt if needed
+                    set_target_properties(cairo::cairo PROPERTIES
+                        IMPORTED_IMPLIB "${LOCAL_CAIRO_ROOT}/lib/x64/cairo.lib"
+                        IMPORTED_LOCATION "${LOCAL_CAIRO_ROOT}/lib/x64/cairo.dll"
+                        INTERFACE_INCLUDE_DIRECTORIES "${LOCAL_CAIRO_ROOT}/include"
+                    )
+                endif()
+            endif()
+
+            # Alias
+            if(NOT TARGET PkgConfig::CAIRO)
+                add_library(PkgConfig::CAIRO ALIAS cairo::cairo)
+            endif()
+            
+            set(CAIRO_FOUND TRUE)
+            set(cairo_VERSION "1.17.2")
+            
+            # Save DLL location for copy step later
+            set(LOCAL_CAIRO_DLL "${LOCAL_CAIRO_ROOT}/lib/x64/cairo.dll")
+        endif()
+    endif()
+
+    if(CAIRO_FOUND)
+        message(STATUS "Cairo found (Version: ${cairo_VERSION})")
+    else()
+        message(FATAL_ERROR "Cairo not found. Install libcairo2-dev (Linux), use Homebrew (macOS), or vcpkg/deps (Windows).")
+    endif()
+endif()
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    add_compile_options(-Wall -Wextra -Wpedantic)
+    if(CMAKE_BUILD_TYPE STREQUAL "Release")
+        # add_compile_options(-Werror)
+    endif()
+elseif(MSVC)
+    add_compile_options(/W4)
+    add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+    if(CMAKE_BUILD_TYPE STREQUAL "Release")
+        add_compile_options(/WX)
+    endif()
+endif()
+
+if(MINGW)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static -static-libgcc -static-libstdc++")
+endif()
+
+FILE(GLOB SRC
+    "src/*.cpp"
+    "src/ir/*.cpp"
+    "src/tests/*.cpp"
+)
+
+FILE(GLOB HEADERS src/*.hpp)
+
+if(ENABLE_VKVG)
+    list(APPEND SRC src/backends/Vkvg.hpp)
+    ADD_DEFINITIONS (-DENABLE_VKVG)
+endif()
+if(ENABLE_CAIRO)
+    list(APPEND SRC src/backends/Cairo.hpp)
+    ADD_DEFINITIONS (-DENABLE_CAIRO)
+endif()
+
+ADD_EXECUTABLE("${PROJECT_NAME}" ${SRC})
+
+target_sources("${PROJECT_NAME}"
+    PUBLIC FILE_SET HEADERS
+        BASE_DIRS src
+        FILES ${HEADERS}
+
+)
+target_include_directories("${PROJECT_NAME}" SYSTEM PUBLIC
+    ${nlohmann_json_SOURCE_DIR}/include
+)
+target_link_libraries("${PROJECT_NAME}" PUBLIC
+    vulkan
+    argparse
+    nlohmann_json
+)
+
+if(ENABLE_VKVG)
+    target_link_libraries("${PROJECT_NAME}" PUBLIC
+        vkvg
+        vkh
+    )
+endif()
+if(ENABLE_CAIRO)
+    target_link_libraries("${PROJECT_NAME}" PUBLIC
+        PkgConfig::CAIRO
+    )
+endif()
