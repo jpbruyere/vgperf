@@ -1,0 +1,321 @@
+{
+  "version": "1.0.0",
+  "scenes": [
+    {
+      "scene_id": "fills/solid_basic",
+      "ir_path": "fills/solid_basic.irbin",
+      "scene_hash": "8272a69a",
+      "ir_version": "1.1.0",
+      "default_width": 800,
+      "default_height": 600,
+      "required_features": {
+        "needs_nonzero": true
+      },
+      "description": "Uniform 3x2 grid: RGB squares, CMY circles"
+    },
+    {
+      "scene_id": "fills/nested_rects",
+      "ir_path": "fills/nested_rects.irbin",
+      "scene_hash": "0f642c6d",
+      "ir_version": "1.1.0",
+      "default_width": 800,
+      "default_height": 600,
+      "required_features": {
+        "needs_nonzero": true
+      },
+      "description": "32 nested squares, opaque base + 31 passes at alpha 0.25"
+    },
+    {
+      "scene_id": "fills/spiral_circles",
+      "ir_path": "fills/spiral_circles.irbin",
+      "scene_hash": "3cdcb712",
+      "ir_version": "1.1.0",
+      "default_width": 800,
+      "default_height": 600,
+      "required_features": {
+        "needs_nonzero": true
+      },
+      "description": "Spiral circles test"
+    },
+    {
+      "scene_id": "fills/gradients_linear",
+      "ir_path": "fills/gradients_linear.irbin",
+      "scene_hash": "ed20993d",
+      "ir_version": "1.1.0",
+      "default_width": 800,
+      "default_height": 600,
+      "required_features": {
+        "needs_nonzero": true
+      },
+      "description": "Linear gradients test"
+    },
+    {
+      "scene_id": "strokes/strokes_curves",
+      "ir_path": "strokes/strokes_curves.irbin",
+      "scene_hash": "7bcd9ed3",
+      "ir_version": "1.1.0",
+      "default_width": 800,
+      "default_height": 600,
+      "required_features": {
+        "needs_stroke": true
+      },
+      "description": "Stacked full-width waves (lines/quads/cubics), large spiral, join squares"
+    },
+    {
+      "scene_id": "strokes/degen_cusps",
+      "ir_path": "strokes/degen_cusps.irbin",
+      "scene_hash": "ec445f24",
+      "ir_version": "1.1.0",
+      "default_width": 800,
+      "default_height": 600,
+      "required_features": {
+        "needs_stroke": true
+      },
+      "description": "Cusp/near-cusp/loop cubics and a retraced quadratic on a centered 2x2 grid"
+    },
+    {
+      "scene_id": "strokes/degen_empty",
+      "ir_path": "strokes/degen_empty.irbin",
+      "scene_hash": "f4a16547",
+      "ir_version": "1.1.0",
+      "default_width": 800,
+      "default_height": 600,
+      "required_features": {
+        "needs_stroke": true
+      },
+      "description": "Zero-length segments: caps must synthesize the geometry"
+    },
+    {
+      "scene_id": "strokes/degen_short_wide",
+      "ir_path": "strokes/degen_short_wide.irbin",
+      "scene_hash": "d05ca458",
+      "ir_version": "1.1.0",
+      "default_width": 800,
+      "default_height": 600,
+      "required_features": {
+        "needs_stroke": true
+      },
+      "description": "Tiny curves with stroke width >> arc length (up to 40:1)"
+    },
+    {
+      "scene_id": "strokes/degen_reversal",
+      "ir_path": "strokes/degen_reversal.irbin",
+      "scene_hash": "0eea0f86",
+      "ir_version": "1.1.0",
+      "default_width": 800,
+      "default_height": 600,
+      "required_features": {
+        "needs_stroke": true
+      },
+      "description": "180-degree retrace and near-180 miter-limit explosions"
+    },
+    {
+      "scene_id": "complex/tiger",
+      "ir_path": "complex/tiger.irbin",
+      "scene_hash": "1c8cbeba",
+      "ir_version": "1.1.0",
+      "default_width": 800,
+      "default_height": 600,
+      "required_features": {
+        "needs_nonzero": true,
+        "needs_stroke": true
+      },
+      "description": "Ghostscript tiger (305 SVG paths, solid fills/strokes, cubic-heavy)"
+    },
+    {
+      "scene_id": "complex/paris",
+      "ir_path": "complex/paris.irbin",
+      "scene_hash": "71dd8b51",
+      "ir_version": "1.1.0",
+      "default_width": 800,
+      "default_height": 600,
+      "required_features": {
+        "needs_nonzero": true
+      },
+      "description": "Paris map (3056 polygons, ~41k vertices, evenodd building paths)"
+    },
+    {
+      "scene_id": "complex/boston",
+      "ir_path": "complex/boston.irbin",
+      "scene_hash": "6ee4759b",
+      "ir_version": "1.1.0",
+      "default_width": 800,
+      "default_height": 600,
+      "required_features": {
+        "needs_nonzero": true,
+        "needs_stroke": true
+      },
+      "description": "Boston map (1922 paths, thin strokes)"
+    },
+    {
+      "scene_id": "complex/car",
+      "ir_path": "complex/car.irbin",
+      "scene_hash": "f62445dc",
+      "ir_version": "1.1.0",
+      "default_width": 800,
+      "default_height": 600,
+      "required_features": {
+        "needs_nonzero": true,
+        "needs_stroke": true
+      },
+      "description": "Car (420 paths, 236 gradients, elliptical arcs)"
+    },
+    {
+      "scene_id": "complex/contour",
+      "ir_path": "complex/contour.irbin",
+      "scene_hash": "ade7fbb3",
+      "ir_version": "1.1.0",
+      "default_width": 800,
+      "default_height": 600,
+      "required_features": {
+        "needs_nonzero": true,
+        "needs_stroke": true
+      },
+      "description": "Contour plot (53k tiny paths)"
+    },
+    {
+      "scene_id": "complex/drops",
+      "ir_path": "complex/drops.irbin",
+      "scene_hash": "321aef22",
+      "ir_version": "1.1.0",
+      "default_width": 800,
+      "default_height": 600,
+      "required_features": {
+        "needs_nonzero": true,
+        "needs_stroke": true
+      },
+      "description": "Water drops (204 paths, 79 radial gradients)"
+    },
+    {
+      "scene_id": "complex/embrace",
+      "ir_path": "complex/embrace.irbin",
+      "scene_hash": "33f4f1df",
+      "ir_version": "1.1.0",
+      "default_width": 800,
+      "default_height": 600,
+      "required_features": {
+        "needs_nonzero": true,
+        "needs_stroke": true
+      },
+      "description": "Embrace the World (225 paths, 57 gradients)"
+    },
+    {
+      "scene_id": "complex/hawaii",
+      "ir_path": "complex/hawaii.irbin",
+      "scene_hash": "967dc0eb",
+      "ir_version": "1.1.0",
+      "default_width": 800,
+      "default_height": 600,
+      "required_features": {
+        "needs_nonzero": true,
+        "needs_stroke": true
+      },
+      "description": "Hawaii topographic map (1137 dense paths)"
+    },
+    {
+      "scene_id": "complex/paper1",
+      "ir_path": "complex/paper1.irbin",
+      "scene_hash": "7deec0b1",
+      "ir_version": "1.1.0",
+      "default_width": 800,
+      "default_height": 600,
+      "required_features": {
+        "needs_nonzero": true,
+        "needs_stroke": true
+      },
+      "description": "Paper page 1 (5108 glyph-outline paths)"
+    },
+    {
+      "scene_id": "complex/paper2",
+      "ir_path": "complex/paper2.irbin",
+      "scene_hash": "a43fa015",
+      "ir_version": "1.1.0",
+      "default_width": 800,
+      "default_height": 600,
+      "required_features": {
+        "needs_nonzero": true,
+        "needs_stroke": true,
+        "needs_dashes": true,
+        "needs_clipping": true
+      },
+      "description": "Paper page 2 (5691 paths, quads, figures)"
+    },
+    {
+      "scene_id": "complex/paris30k",
+      "ir_path": "complex/paris30k.irbin",
+      "scene_hash": "66a27ddb",
+      "ir_version": "1.1.0",
+      "default_width": 800,
+      "default_height": 600,
+      "required_features": {
+        "needs_nonzero": true,
+        "needs_stroke": true,
+        "needs_dashes": true
+      },
+      "description": "Paris 30k (50690 paths, full map styling)"
+    },
+    {
+      "scene_id": "complex/paris50k",
+      "ir_path": "complex/paris50k.irbin",
+      "scene_hash": "6a922357",
+      "ir_version": "1.1.0",
+      "default_width": 800,
+      "default_height": 600,
+      "required_features": {
+        "needs_nonzero": true,
+        "needs_stroke": true,
+        "needs_dashes": true
+      },
+      "description": "Paris 50k (45796 paths, full map styling)"
+    },
+    {
+      "scene_id": "complex/paris70k",
+      "ir_path": "complex/paris70k.irbin",
+      "scene_hash": "e2ef306d",
+      "ir_version": "1.1.0",
+      "default_width": 800,
+      "default_height": 600,
+      "required_features": {
+        "needs_nonzero": true,
+        "needs_stroke": true,
+        "needs_dashes": true
+      },
+      "description": "Paris 70k (45590 paths, full map styling)"
+    },
+    {
+      "scene_id": "complex/reschart",
+      "ir_path": "complex/reschart.irbin",
+      "scene_hash": "c87cde17",
+      "ir_version": "1.1.0",
+      "default_width": 800,
+      "default_height": 600,
+      "required_features": {
+        "needs_nonzero": true,
+        "needs_stroke": true
+      },
+      "description": "Resolution chart (747 paths)"
+    },
+    {
+      "scene_id": "validation/subpixel_morton",
+      "ir_path": "validation/subpixel_morton.irbin",
+      "scene_hash": "5e6a182a",
+      "ir_version": "1.1.0",
+      "default_width": 800,
+      "default_height": 600,
+      "required_features": {
+        "needs_nonzero": true
+      },
+      "description": "Coverage Subpixel Oracle: Exact-Union vs Sum-Then-Saturate (Coincident Stacks, Rosette Petals, Tessellation Seams)"
+    },
+    {
+      "scene_id": "validation/noop",
+      "ir_path": "validation/noop.irbin",
+      "scene_hash": "3ab8c3f7",
+      "ir_version": "1.1.0",
+      "default_width": 800,
+      "default_height": 600,
+      "required_features": {},
+      "description": "10k No-Op Commands for Overhead Measurement"
+    }
+  ]
+}
